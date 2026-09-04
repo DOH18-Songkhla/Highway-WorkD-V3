@@ -9,7 +9,6 @@
 </head>
 <body class="bg-gray-100 min-h-screen">
 
-    <!-- แถบเมนูด้านบน (Navbar) -->
     <nav class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center">
         <div class="flex items-center gap-2">
             <h1 class="text-xl font-bold">Highway WorkD V.3</h1>
@@ -22,18 +21,15 @@
         </div>
     </nav>
 
-    <!-- พื้นที่แสดงเนื้อหาหลัก -->
     <div class="container mx-auto p-6 mt-4">
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
-                <!-- ปุ่มเพิ่มโครงการจะแสดงเฉพาะสิทธิ์ที่เหมาะสมในอนาคต -->
                 <button id="addProjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow hidden">
                     + เพิ่มโครงการใหม่
                 </button>
             </div>
             
-            <!-- พื้นที่สำหรับแสดงตารางข้อมูล (เดี๋ยวเรามาเขียนโค้ดดึงข้อมูลใส่ตรงนี้กันครับ) -->
             <div id="projectContainer" class="border-dashed border-2 border-gray-300 p-12 text-center text-gray-500 rounded bg-gray-50">
                 พื้นที่ตารางแสดงรายการโครงการก่อสร้าง (กำลังพัฒนา)
             </div>
@@ -41,17 +37,13 @@
     </div>
 
     <script>
-        // 1. ตั้งค่าการเชื่อมต่อ (ใช้ Key เดิมของคุณ)
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 2. ฟังก์ชันตรวจสอบสิทธิ์เมื่อเปิดหน้านี้
         async function checkSession() {
-            // ดึงข้อมูล session ปัจจุบัน
             const { data: { session } } = await supabaseClient.auth.getSession();
             
-            // ถ้าไม่มี session (ยังไม่ได้ล็อกอิน) ให้เตะกลับไปหน้า Login
             if (!session) {
                 window.location.href = 'index.html';
                 return;
@@ -59,7 +51,6 @@
 
             const user = session.user;
 
-            // ดึงข้อมูล Role จากตาราง doh_profiles_v3
             const { data: profileData, error } = await supabaseClient
                 .from('doh_profiles_v3')
                 .select('role, department_id')
@@ -67,31 +58,26 @@
                 .single();
 
             if (!error && profileData) {
-                // แสดงอีเมลและระดับสิทธิ์ที่มุมขวาบน
                 document.getElementById('userInfo').innerText = `ผู้ใช้งาน: ${user.email} (สิทธิ์: ${profileData.role})`;
                 
-                // ตัวอย่าง: ถ้าเป็น super_admin หรือ admin ค่อยแสดงปุ่ม "เพิ่มโครงการใหม่"
                 if (profileData.role === 'super_admin' || profileData.role === 'admin') {
                     document.getElementById('addProjectBtn').classList.remove('hidden');
-				// --- เพิ่มโค้ดส่วนนี้เข้าไปใน checkSession ---
+                }
+
+                // ส่วนของการแสดง Alert ต้อนรับ
                 const savedRole = localStorage.getItem('loginSuccessRole');
                 if (savedRole) {
-                // ถ้าพบว่าเพิ่งล็อกอินเข้ามา ให้เด้ง Alert ทันที
                     alert(`เข้าสู่ระบบสำเร็จ!\nระดับสิทธิ์ของคุณคือ: ${savedRole}`);
-                // ลบค่าทิ้ง เพื่อไม่ให้มันเด้งซ้ำเวลาผู้ใช้กดปุ่มรีเฟรชหน้าเว็บ (F5)
-                    localStorage.removeItem('loginSuccessRole');
-                // ----------------------------------------
+                    localStorage.removeItem('loginSuccessRole'); // ลบค่าทิ้งเพื่อไม่ให้เด้งซ้ำตอนรีเฟรช
                 }
             }
         }
 
-        // 3. ดักจับการกดปุ่มออกจากระบบ
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             await supabaseClient.auth.signOut();
             window.location.href = 'index.html';
         });
 
-        // สั่งให้ตรวจสอบสิทธิ์ทันทีที่โหลดหน้าเว็บเสร็จ
         checkSession();
     </script>
 </body>
