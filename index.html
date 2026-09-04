@@ -1,9 +1,11 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ระบบรายงานความก้าวหน้า V.3 - สำนักทางหลวงที่ 18</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบบริหารงานทางหลวงและโครงการก่อสร้าง V.3 - สำนักทางหลวงที่ 18</title>
+<link rel="icon" href="favicon.ico" type="image/x-icon">
+<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <!-- ใช้ Tailwind CSS สำหรับจัดหน้าตาให้เป็นระดับองค์กร -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- นำเข้า Supabase JS -->
@@ -37,12 +39,11 @@
     </div>
 
     <script>
-        // 1. ตั้งค่าการเชื่อมต่อ
+        // 1. ตั้งค่าการเชื่อมต่อ Supabase ด้วย URL และ Anon Key ของคุณ
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         
-        // แก้ไข: ใช้ชื่อตัวแปร supabaseClient เพื่อไม่ให้ชนกับไลบรารีหลัก
-        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // 2. ดักจับการกดปุ่มเข้าสู่ระบบ
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -59,17 +60,17 @@
             errorMessage.classList.add('hidden');
 
             try {
-                // ล็อกอิน
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
+                // ส่งข้อมูลไปตรวจสอบกับระบบ Auth ของ Supabase
+                const { data, error } = await supabase.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
 
                 if (error) throw error;
 
-                // 3. ดึงสิทธิ์ (Role)
+                // 3. หากล็อกอินสำเร็จ ให้ดึงสิทธิ์ (Role) จากตาราง doh_profiles_v3
                 const userId = data.user.id;
-                const { data: profileData, error: profileError } = await supabaseClient
+                const { data: profileData, error: profileError } = await supabase
                     .from('doh_profiles_v3')
                     .select('role, department_id')
                     .eq('id', userId)
@@ -77,10 +78,15 @@
 
                 if (profileError) throw profileError;
 
-                alert(`เข้าสู่ระบบสำเร็จ!\nระดับสิทธิ์ของคุณคือ: ${profileData.role}`);
+                // แสดงผลลัพธ์ (สเตปต่อไปเราจะเปลี่ยนเป็นการเด้งไปหน้า Dashboard ของแต่ละสิทธิ์)
+                // บันทึกสิทธิ์ไว้ในหน่วยความจำ แล้วสั่งเปลี่ยนหน้าทันที
+                localStorage.setItem('loginSuccessRole', profileData.role);
+                window.location.href = 'dashboard.html';
+                
+                // ตัวอย่างการเปลี่ยนหน้า
+                // window.location.href = 'dashboard.html';
 
             } catch (err) {
-                console.error("Login Error:", err); // พิมพ์ Error ลง Console เผื่อไว้เช็คปัญหา
                 errorMessage.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง';
                 errorMessage.classList.remove('hidden');
             } finally {
