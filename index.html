@@ -37,11 +37,12 @@
     </div>
 
     <script>
-        // 1. ตั้งค่าการเชื่อมต่อ Supabase ด้วย URL และ Anon Key ของคุณ
+        // 1. ตั้งค่าการเชื่อมต่อ
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         
-        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        // แก้ไข: ใช้ชื่อตัวแปร supabaseClient เพื่อไม่ให้ชนกับไลบรารีหลัก
+        const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
         // 2. ดักจับการกดปุ่มเข้าสู่ระบบ
         document.getElementById('loginForm').addEventListener('submit', async function(e) {
@@ -58,17 +59,17 @@
             errorMessage.classList.add('hidden');
 
             try {
-                // ส่งข้อมูลไปตรวจสอบกับระบบ Auth ของ Supabase
-                const { data, error } = await supabase.auth.signInWithPassword({
+                // ล็อกอิน
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
 
                 if (error) throw error;
 
-                // 3. หากล็อกอินสำเร็จ ให้ดึงสิทธิ์ (Role) จากตาราง doh_profiles_v3
+                // 3. ดึงสิทธิ์ (Role)
                 const userId = data.user.id;
-                const { data: profileData, error: profileError } = await supabase
+                const { data: profileData, error: profileError } = await supabaseClient
                     .from('doh_profiles_v3')
                     .select('role, department_id')
                     .eq('id', userId)
@@ -76,13 +77,10 @@
 
                 if (profileError) throw profileError;
 
-                // แสดงผลลัพธ์ (สเตปต่อไปเราจะเปลี่ยนเป็นการเด้งไปหน้า Dashboard ของแต่ละสิทธิ์)
                 alert(`เข้าสู่ระบบสำเร็จ!\nระดับสิทธิ์ของคุณคือ: ${profileData.role}`);
-                
-                // ตัวอย่างการเปลี่ยนหน้า
-                // window.location.href = 'dashboard.html';
 
             } catch (err) {
+                console.error("Login Error:", err); // พิมพ์ Error ลง Console เผื่อไว้เช็คปัญหา
                 errorMessage.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง';
                 errorMessage.classList.remove('hidden');
             } finally {
