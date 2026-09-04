@@ -38,8 +38,8 @@
         </form>
     </div>
 
-    <script>
-        // 1. ตั้งค่าการเชื่อมต่อ Supabase ด้วย URL และ Anon Key ของคุณ
+<script>
+        // 1. ตั้งค่าการเชื่อมต่อ (เปลี่ยนชื่อเป็น supabaseClient เพื่อไม่ให้ชน)
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         
@@ -54,23 +54,23 @@
             const loginBtn = document.getElementById('loginBtn');
             const errorMessage = document.getElementById('errorMessage');
 
-            // เปลี่ยนสถานะปุ่มขณะรอโหลด
+            // เปลี่ยนสถานะปุ่ม
             loginBtn.innerText = 'กำลังตรวจสอบ...';
             loginBtn.disabled = true;
             errorMessage.classList.add('hidden');
 
             try {
-                // ส่งข้อมูลไปตรวจสอบกับระบบ Auth ของ Supabase
-                const { data, error } = await supabase.auth.signInWithPassword({
+                // เช็คจุดที่ 1: ต้องใช้ supabaseClient
+                const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password,
                 });
 
                 if (error) throw error;
 
-                // 3. หากล็อกอินสำเร็จ ให้ดึงสิทธิ์ (Role) จากตาราง doh_profiles_v3
+                // เช็คจุดที่ 2: ต้องใช้ supabaseClient
                 const userId = data.user.id;
-                const { data: profileData, error: profileError } = await supabase
+                const { data: profileData, error: profileError } = await supabaseClient
                     .from('doh_profiles_v3')
                     .select('role, department_id')
                     .eq('id', userId)
@@ -78,19 +78,16 @@
 
                 if (profileError) throw profileError;
 
-                // แสดงผลลัพธ์ (สเตปต่อไปเราจะเปลี่ยนเป็นการเด้งไปหน้า Dashboard ของแต่ละสิทธิ์)
-                // บันทึกสิทธิ์ไว้ในหน่วยความจำ แล้วสั่งเปลี่ยนหน้าทันที
+                // บันทึกสิทธิ์และเปลี่ยนหน้าไป Dashboard ทันที (ให้ Dashboard เป็นคนเด้ง Alert)
                 localStorage.setItem('loginSuccessRole', profileData.role);
                 window.location.href = 'dashboard.html';
-                
-                // ตัวอย่างการเปลี่ยนหน้า
-                // window.location.href = 'dashboard.html';
 
             } catch (err) {
+                // ถ้าคุณกด F12 ดูใน Console จะเห็น Error ที่แท้จริงตรงนี้ครับ
+                console.error("ระบบเจอ Error ภายใน:", err); 
                 errorMessage.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง';
                 errorMessage.classList.remove('hidden');
             } finally {
-                // คืนสถานะปุ่มกลับมา
                 loginBtn.innerText = 'เข้าสู่ระบบ';
                 loginBtn.disabled = false;
             }
