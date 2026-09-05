@@ -133,6 +133,31 @@
                     </button>
                 </div>
                 
+                <!-- ส่วนอัปโหลดรูปภาพ -->
+                <div class="mb-6 border-t pt-4">
+                    <label class="block text-purple-800 text-md font-bold mb-2 flex items-center gap-2">
+                        📸 รูปภาพความก้าวหน้าหน้างาน (เลือกได้สูงสุด 4 รูป)
+                    </label>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div>
+                            <label class="block text-gray-700 text-xs font-bold mb-1">รูปที่ 1</label>
+                            <input type="file" id="photo1" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-xs font-bold mb-1">รูปที่ 2</label>
+                            <input type="file" id="photo2" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-xs font-bold mb-1">รูปที่ 3</label>
+                            <input type="file" id="photo3" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                        </div>
+                        <div>
+                            <label class="block text-gray-700 text-xs font-bold mb-1">รูปที่ 4</label>
+                            <input type="file" id="photo4" accept="image/*" class="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-md file:border-0 file:text-sm file:font-semibold file:bg-purple-50 file:text-purple-700 hover:file:bg-purple-100">
+                        </div>
+                    </div>
+                </div>
+                
                 <!-- หมายเหตุ -->
                 <div class="mb-6">
                     <label class="block text-gray-700 text-sm font-bold mb-1">รายละเอียด / หมายเหตุ</label>
@@ -335,65 +360,99 @@
             addCommitteeRow(); 
         });
 
+// ฟังก์ชันอัปโหลดรูปลง Supabase Storage
+        async function uploadImage(fileInputId) {
+            const fileInput = document.getElementById(fileInputId);
+            const file = fileInput.files[0];
+            
+            if (!file) return null; // ถ้าไม่ได้เลือกรูป ให้ข้ามไป
+
+            // สร้างชื่อไฟล์ใหม่ไม่ให้ซ้ำกัน (ใช้เวลาปัจจุบัน + สุ่มตัวอักษร)
+            const fileExt = file.name.split('.').pop();
+            const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
+            const filePath = `progress/${fileName}`; // เก็บในโฟลเดอร์ชื่อ progress
+
+            try {
+                // 1. อัปโหลดไฟล์ไปที่ Bucket 'project_photos'
+                const { error: uploadError } = await supabaseClient.storage
+                    .from('project_photos')
+                    .upload(filePath, file);
+
+                if (uploadError) throw uploadError;
+
+                // 2. ดึง URL แบบ Public ของรูปที่เพิ่งอัปโหลดเสร็จ
+                const { data } = supabaseClient.storage
+                    .from('project_photos')
+                    .getPublicUrl(filePath);
+
+                return data.publicUrl;
+            } catch (err) {
+                console.error(`Upload Error (${fileInputId}):`, err);
+                return null;
+            }
+        }
+        
 // 4. กดบันทึกข้อมูลโครงการ
         projectForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const saveBtn = document.getElementById('saveProjectBtn');
-            saveBtn.innerHTML = '⏳ กำลังบันทึก...';
+            saveBtn.innerHTML = '⏳ กำลังอัปโหลดรูปและบันทึก...';
             saveBtn.disabled = true;
 
-            // --- ส่วนที่เพิ่มใหม่: กวาดข้อมูลคณะกรรมการจากทุกแถว ---
-            const committeeRows = document.querySelectorAll('.committee-row');
-            const committeeMembers = [];
-            
-            committeeRows.forEach(row => {
-                const name = row.querySelector('.c-name').value.trim();
-                const position = row.querySelector('.c-position').value.trim();
-                const role = row.querySelector('.c-role').value;
-                
-                // เก็บเฉพาะแถวที่มีการพิมพ์ชื่อลงไป
-                if (name) { 
-                    committeeMembers.push({ name, position, role });
-                }
-            });
-            // --------------------------------------------------
-
-            const newProject = {
-                project_name: document.getElementById('projectName').value,
-                fiscal_year: document.getElementById('fiscalYear').value,
-                funding_source: document.getElementById('fundingSource').value,
-                status: document.getElementById('projectStatus').value,
-                contract_number: document.getElementById('contractNum').value,
-                contractor: document.getElementById('contractor').value,
-                route_number: document.getElementById('routeNum').value,
-                section_name: document.getElementById('sectionName').value,
-                km_range: document.getElementById('kmRange').value,
-                progress_percent: parseFloat(document.getElementById('progressPercent').value) || 0,
-                total_budget: parseFloat(document.getElementById('totalBudget').value) || 0,
-                paid_amount: parseFloat(document.getElementById('paidAmount').value) || 0,
-                notes: document.getElementById('projectNotes').value,
-                department_id: userDepartmentId,
-                committee_members: committeeMembers // <--- ส่งชุดข้อมูลคณะกรรมการเข้าฐานข้อมูลตรงนี้
-            };
-
-            // ... (โค้ดส่วน try-catch คำสั่ง insert ลง Supabase คงเดิม) ...
-
             try {
+                // --- ส่วนที่ 1: อัปโหลดรูปภาพทั้งหมด (รอให้เสร็จทีละรูป) ---
+                const photo1Url = await uploadImage('photo1');
+                const photo2Url = await uploadImage('photo2');
+                const photo3Url = await uploadImage('photo3');
+                const photo4Url = await uploadImage('photo4');
+
+                // --- ส่วนที่ 2: กวาดข้อมูลคณะกรรมการ ---
+                const committeeRows = document.querySelectorAll('.committee-row');
+                const committeeMembers = [];
+                committeeRows.forEach(row => {
+                    const name = row.querySelector('.c-name').value.trim();
+                    const position = row.querySelector('.c-position').value.trim();
+                    const role = row.querySelector('.c-role').value;
+                    if (name) committeeMembers.push({ name, position, role });
+                });
+
+                // --- ส่วนที่ 3: รวมข้อมูลทั้งหมดส่งเข้าฐานข้อมูล ---
+                const newProject = {
+                    project_name: document.getElementById('projectName').value,
+                    fiscal_year: document.getElementById('fiscalYear').value,
+                    funding_source: document.getElementById('fundingSource').value,
+                    status: document.getElementById('projectStatus').value,
+                    contract_number: document.getElementById('contractNum').value,
+                    contractor: document.getElementById('contractor').value,
+                    route_number: document.getElementById('routeNum').value,
+                    section_name: document.getElementById('sectionName').value,
+                    km_range: document.getElementById('kmRange').value,
+                    progress_percent: parseFloat(document.getElementById('progressPercent').value) || 0,
+                    total_budget: parseFloat(document.getElementById('totalBudget').value) || 0,
+                    paid_amount: parseFloat(document.getElementById('paidAmount').value) || 0,
+                    notes: document.getElementById('projectNotes').value,
+                    department_id: userDepartmentId,
+                    committee_members: committeeMembers,
+                    // ใส่ URL รูปภาพที่ได้มาลงฐานข้อมูล (ถ้าไม่ได้อัปโหลดจะเป็น null)
+                    photo_1: photo1Url,
+                    photo_2: photo2Url,
+                    photo_3: photo3Url,
+                    photo_4: photo4Url
+                };
+
                 const { error } = await supabaseClient
                     .from('doh_projects_v3')
                     .insert([newProject]);
 
                 if (error) throw error;
 
-                alert('เพิ่มโครงการสำเร็จ!');
+                alert('เพิ่มโครงการพร้อมรูปภาพสำเร็จ!');
                 modal.classList.add('hidden');
                 projectForm.reset();
-                
-                // รีเฟรชตารางใหม่
                 fetchProjects();
 
             } catch (err) {
-                console.error("Insert Error:", err);
+                console.error("Submit Error:", err);
                 alert('เกิดข้อผิดพลาด: ' + err.message);
             } finally {
                 saveBtn.innerHTML = '💾 บันทึก';
