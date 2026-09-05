@@ -117,6 +117,19 @@
                     </div>
                 </div>
 
+                <!-- คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน -->
+                <div class="mb-6 border-t pt-4">
+                    <label class="block text-purple-800 text-md font-bold mb-2 flex items-center gap-2">
+                        👥 คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน
+                    </label>
+                    <div id="committeeContainer" class="space-y-2">
+                        <!-- แถวรายชื่อคณะกรรมการจะถูกเพิ่มที่นี่อัตโนมัติ -->
+                    </div>
+                    <button type="button" id="addCommitteeBtn" class="mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm shadow-sm border flex items-center gap-1 font-medium">
+                        + เพิ่มรายชื่อ
+                    </button>
+                </div>
+                
                 <!-- หมายเหตุ -->
                 <div class="mb-6">
                     <label class="block text-gray-700 text-sm font-bold mb-1">รายละเอียด / หมายเหตุ</label>
@@ -270,6 +283,42 @@
             projectForm.reset();
         });
 
+// ระบบจัดการรายชื่อคณะกรรมการ
+        const committeeContainer = document.getElementById('committeeContainer');
+        const addCommitteeBtn = document.getElementById('addCommitteeBtn');
+
+        function addCommitteeRow() {
+            const row = document.createElement('div');
+            row.className = 'flex gap-2 items-center committee-row';
+            row.innerHTML = `
+                <input type="text" placeholder="ชื่อ-นามสกุล" class="c-name shadow-sm border rounded w-full md:w-2/5 py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                <input type="text" placeholder="ตำแหน่ง" class="c-position shadow-sm border rounded w-full md:w-2/5 py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                <select class="c-role shadow-sm border rounded w-full md:w-1/5 py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    <option value="">-- เลือกประเภท --</option>
+                    <option value="ประธานกรรมการ">ประธานกรรมการ</option>
+                    <option value="กรรมการ">กรรมการ</option>
+                    <option value="ผู้ควบคุมงาน">ผู้ควบคุมงาน</option>
+                </select>
+                <button type="button" class="text-red-400 hover:text-red-600 font-bold px-2 text-xl remove-c-btn">✕</button>
+            `;
+            committeeContainer.appendChild(row);
+
+            // คำสั่งลบแถวเมื่อกดปุ่มกากบาท
+            row.querySelector('.remove-c-btn').addEventListener('click', function() {
+                row.remove();
+            });
+        }
+
+        // ผูกปุ่มเพิ่มรายชื่อกับฟังก์ชัน
+        addCommitteeBtn.addEventListener('click', addCommitteeRow);
+
+        // แก้ไขปุ่มเปิด Modal ให้เคลียร์รายชื่อเก่า และสร้างแถวว่างๆ ไว้รอ 1 แถวเสมอ
+        addProjectBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+            committeeContainer.innerHTML = ''; 
+            addCommitteeRow(); 
+        });
+
 // 4. กดบันทึกข้อมูลโครงการ
         projectForm.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -277,7 +326,22 @@
             saveBtn.innerHTML = '⏳ กำลังบันทึก...';
             saveBtn.disabled = true;
 
-            // กวาดข้อมูลจากทุกช่องในฟอร์ม
+            // --- ส่วนที่เพิ่มใหม่: กวาดข้อมูลคณะกรรมการจากทุกแถว ---
+            const committeeRows = document.querySelectorAll('.committee-row');
+            const committeeMembers = [];
+            
+            committeeRows.forEach(row => {
+                const name = row.querySelector('.c-name').value.trim();
+                const position = row.querySelector('.c-position').value.trim();
+                const role = row.querySelector('.c-role').value;
+                
+                // เก็บเฉพาะแถวที่มีการพิมพ์ชื่อลงไป
+                if (name) { 
+                    committeeMembers.push({ name, position, role });
+                }
+            });
+            // --------------------------------------------------
+
             const newProject = {
                 project_name: document.getElementById('projectName').value,
                 fiscal_year: document.getElementById('fiscalYear').value,
@@ -292,8 +356,11 @@
                 total_budget: parseFloat(document.getElementById('totalBudget').value) || 0,
                 paid_amount: parseFloat(document.getElementById('paidAmount').value) || 0,
                 notes: document.getElementById('projectNotes').value,
-                department_id: userDepartmentId // อ้างอิงแขวงจากคนที่ล็อกอิน
+                department_id: userDepartmentId,
+                committee_members: committeeMembers // <--- ส่งชุดข้อมูลคณะกรรมการเข้าฐานข้อมูลตรงนี้
             };
+
+            // ... (โค้ดส่วน try-catch คำสั่ง insert ลง Supabase คงเดิม) ...
 
             try {
                 const { error } = await supabaseClient
