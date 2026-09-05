@@ -64,6 +64,9 @@
                     document.getElementById('addProjectBtn').classList.remove('hidden');
                 }
 
+                // เรียกใช้ฟังก์ชันดึงข้อมูลตารางตรงนี้ครับ
+                fetchProjects();
+  
                 // ส่วนของการแสดง Alert ต้อนรับ
                 const savedRole = localStorage.getItem('loginSuccessRole');
                 if (savedRole) {
@@ -72,7 +75,68 @@
                 }
             }
         }
+// ฟังก์ชันดึงข้อมูลและสร้างตาราง
+        async function fetchProjects() {
+            const container = document.getElementById('projectContainer');
+            container.innerHTML = '<p class="text-blue-500 font-bold">กำลังโหลดข้อมูลโครงการ...</p>';
 
+            try {
+                // คำสั่งเดียวดึงข้อมูลได้เลย (RLS ในฐานข้อมูลจะกรองสิทธิ์ให้เอง)
+                const { data: projects, error } = await supabaseClient
+                    .from('doh_projects_v3')
+                    .select('*')
+                    .order('id', { ascending: false }); // เรียงจากใหม่ไปเก่า
+
+                if (error) throw error;
+
+                // กรณีที่ยังไม่มีข้อมูลในระบบ
+                if (!projects || projects.length === 0) {
+                    container.innerHTML = '<p class="text-gray-500">ยังไม่มีข้อมูลโครงการในระบบ</p>';
+                    return;
+                }
+
+                // สร้างโครงสร้างตาราง HTML
+                let tableHTML = `
+                    <div class="overflow-x-auto text-left">
+                        <table class="min-w-full bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden">
+                            <thead class="bg-blue-50">
+                                <tr>
+                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">รหัส</th>
+                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">ชื่อโครงการ</th>
+                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">เลขที่สัญญา</th>
+                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">สถานะ</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                `;
+
+                // วนลูปนำข้อมูลแต่ละแถวมาใส่ในตาราง
+                projects.forEach(project => {
+                    tableHTML += `
+                        <tr class="hover:bg-gray-50 transition duration-150">
+                            <td class="py-2 px-4 border-b text-gray-600">${project.id}</td>
+                            <td class="py-2 px-4 border-b text-gray-800 font-medium">${project.project_name || '-'}</td>
+                            <td class="py-2 px-4 border-b text-gray-600">${project.contract_number || '-'}</td>
+                            <td class="py-2 px-4 border-b">
+                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">
+                                    ${project.status || 'รออัปเดต'}
+                                </span>
+                            </td>
+                        </tr>
+                    `;
+                });
+
+                tableHTML += `</tbody></table></div>`;
+                
+                // นำตารางไปแสดงในหน้าเว็บแทนที่กล่องข้อความเดิม
+                container.innerHTML = tableHTML;
+                container.classList.remove('border-dashed', 'border-2', 'p-12', 'text-center');
+
+            } catch (err) {
+                console.error("Fetch Error:", err);
+                container.innerHTML = '<p class="text-red-500 font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล โปรดลองรีเฟรชหน้าเว็บ</p>';
+            }
+        }
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             await supabaseClient.auth.signOut();
             window.location.href = 'index.html';
