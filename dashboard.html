@@ -7,43 +7,84 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
-<body class="bg-gray-100 min-h-screen">
+<body class="bg-gray-100 min-h-screen relative">
 
+    <!-- แถบเมนูด้านบน (Navbar) -->
     <nav class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center">
         <div class="flex items-center gap-2">
             <h1 class="text-xl font-bold">Highway WorkD V.3</h1>
         </div>
         <div class="flex items-center gap-4">
-            <span id="userInfo" class="text-sm font-medium">กำลังโหลดข้อมูล...</span>
+            <!-- แสดงชื่อและตำแหน่งที่มุมขวาบน -->
+            <div id="userInfo" class="text-sm">กำลังโหลดข้อมูล...</div>
             <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-bold shadow transition duration-150">
                 ออกจากระบบ
             </button>
         </div>
     </nav>
 
+    <!-- พื้นที่แสดงเนื้อหาหลัก -->
     <div class="container mx-auto p-6 mt-4">
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex justify-between items-center mb-6">
                 <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
+                <!-- ปุ่มเพิ่มโครงการจะแสดงเฉพาะสิทธิ์ที่เหมาะสมในอนาคต -->
                 <button id="addProjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow hidden">
                     + เพิ่มโครงการใหม่
                 </button>
             </div>
             
-            <div id="projectContainer" class="border-dashed border-2 border-gray-300 p-12 text-center text-gray-500 rounded bg-gray-50">
-                พื้นที่ตารางแสดงรายการโครงการก่อสร้าง (กำลังพัฒนา)
+            <!-- พื้นที่สำหรับแสดงตารางข้อมูล (เดี๋ยวเรามาเขียนโค้ดดึงข้อมูลใส่ตรงนี้กันครับ) -->
+            <div id="projectContainer" class="p-4 text-center text-gray-500 rounded bg-gray-50 border border-gray-200">
+                กำลังโหลดข้อมูล...
             </div>
         </div>
     </div>
 
+    <!-- หน้าต่าง Pop-up (Modal) สำหรับเพิ่มโครงการ -->
+    <div id="projectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+        <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
+            <h3 class="text-xl font-bold mb-4 text-blue-800">เพิ่มโครงการใหม่</h3>
+            <form id="projectForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อโครงการ</label>
+                    <input type="text" id="projectName" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">เลขที่สัญญา</label>
+                    <input type="text" id="contractNum" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">สถานะ</label>
+                    <select id="projectStatus" class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                        <option value="รอดำเนินการ">รอดำเนินการ</option>
+                        <option value="กำลังก่อสร้าง">กำลังก่อสร้าง</option>
+                        <option value="ล่าช้ากว่าแผน">ล่าช้ากว่าแผน</option>
+                        <option value="แล้วเสร็จ">แล้วเสร็จ</option>
+                    </select>
+                </div>
+                <div class="flex justify-end gap-3">
+                    <button type="button" id="closeModalBtn" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded font-bold">ยกเลิก</button>
+                    <button type="submit" id="saveProjectBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold">บันทึกข้อมูล</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
     <script>
+        // 1. ตั้งค่าการเชื่อมต่อ (ใช้ Key เดิมของคุณ)
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+        let userDepartmentId = null; // ตัวแปรเก็บสังกัดของคนที่ล็อกอิน
+
+        // 1. ตรวจสอบสิทธิ์
         async function checkSession() {
+            // ดึงข้อมูล session ปัจจุบัน
             const { data: { session } } = await supabaseClient.auth.getSession();
             
+            // ถ้าไม่มี session (ยังไม่ได้ล็อกอิน) ให้เตะกลับไปหน้า Login
             if (!session) {
                 window.location.href = 'index.html';
                 return;
@@ -51,6 +92,7 @@
 
             const user = session.user;
 
+            // ดึงข้อมูล Role จากตาราง doh_profiles_v3 พ่วง full_name และ position_name มาด้วย
             const { data: profileData, error } = await supabaseClient
                 .from('doh_profiles_v3')
                 .select('role, department_id, full_name, position_name')
@@ -58,76 +100,79 @@
                 .single();
 
             if (!error && profileData) {
-            const name = profileData.full_name || user.email; // ถ้าไม่มีชื่อให้แสดงอีเมลแทน
-            const position = profileData.position_name || 'ไม่ระบุตำแหน่ง';
+                userDepartmentId = profileData.department_id; // เก็บสังกัดไว้ใช้ตอนสร้างโครงการใหม่
 
-            document.getElementById('userInfo').innerHTML = `
-                <div class="text-right leading-tight">
-                    <div class="font-bold text-white">${name}</div>
-                    <div class="text-xs text-blue-200">${position} (สิทธิ์: ${profileData.role})</div>
-                </div>
-`;
+                // จัดรูปแบบชื่อและตำแหน่ง
+                const name = profileData.full_name || user.email;
+                const position = profileData.position_name || 'ไม่ระบุตำแหน่ง';
+                
+                document.getElementById('userInfo').innerHTML = `
+                    <div class="text-right leading-tight">
+                        <div class="font-bold text-white">${name}</div>
+                        <div class="text-xs text-blue-200">${position} (สิทธิ์: ${profileData.role})</div>
+                    </div>
+                `;
                 
                 if (profileData.role === 'super_admin' || profileData.role === 'admin') {
                     document.getElementById('addProjectBtn').classList.remove('hidden');
                 }
 
-                // เรียกใช้ฟังก์ชันดึงข้อมูลตารางตรงนี้ครับ
+                // สั่งดึงข้อมูลโครงการมาแสดง
                 fetchProjects();
-  
-                // ส่วนของการแสดง Alert ต้อนรับ
+
                 const savedRole = localStorage.getItem('loginSuccessRole');
                 if (savedRole) {
+                // ถ้าพบว่าเพิ่งล็อกอินเข้ามา ให้เด้ง Alert ทันที
                     alert(`เข้าสู่ระบบสำเร็จ!\nระดับสิทธิ์ของคุณคือ: ${savedRole}`);
-                    localStorage.removeItem('loginSuccessRole'); // ลบค่าทิ้งเพื่อไม่ให้เด้งซ้ำตอนรีเฟรช
+                // ลบค่าทิ้ง เพื่อไม่ให้มันเด้งซ้ำเวลาผู้ใช้กดปุ่มรีเฟรชหน้าเว็บ (F5)
+                    localStorage.removeItem('loginSuccessRole'); 
                 }
             }
         }
-// ฟังก์ชันดึงข้อมูลและสร้างตาราง
+
+        // 2. ดึงข้อมูลโครงการมาสร้างตาราง
         async function fetchProjects() {
             const container = document.getElementById('projectContainer');
-            container.innerHTML = '<p class="text-blue-500 font-bold">กำลังโหลดข้อมูลโครงการ...</p>';
-
+            
             try {
-                // คำสั่งเดียวดึงข้อมูลได้เลย (RLS ในฐานข้อมูลจะกรองสิทธิ์ให้เอง)
                 const { data: projects, error } = await supabaseClient
                     .from('doh_projects_v3')
                     .select('*')
-                    .order('id', { ascending: false }); // เรียงจากใหม่ไปเก่า
+                    .order('created_at', { ascending: false });
 
                 if (error) throw error;
 
-                // กรณีที่ยังไม่มีข้อมูลในระบบ
                 if (!projects || projects.length === 0) {
-                    container.innerHTML = '<p class="text-gray-500">ยังไม่มีข้อมูลโครงการในระบบ</p>';
+                    container.innerHTML = '<p class="text-gray-500 py-8">ยังไม่มีข้อมูลโครงการในระบบ</p>';
                     return;
                 }
 
-                // สร้างโครงสร้างตาราง HTML
                 let tableHTML = `
                     <div class="overflow-x-auto text-left">
-                        <table class="min-w-full bg-white border border-gray-200 shadow-sm rounded-lg overflow-hidden">
-                            <thead class="bg-blue-50">
+                        <table class="min-w-full bg-white">
+                            <thead class="bg-blue-50 border-b-2 border-blue-200">
                                 <tr>
-                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">รหัส</th>
-                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">ชื่อโครงการ</th>
-                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">เลขที่สัญญา</th>
-                                    <th class="py-3 px-4 border-b text-gray-700 font-bold">สถานะ</th>
+                                    <th class="py-3 px-4 text-gray-700 font-bold">ชื่อโครงการ</th>
+                                    <th class="py-3 px-4 text-gray-700 font-bold">เลขที่สัญญา</th>
+                                    <th class="py-3 px-4 text-gray-700 font-bold">สถานะ</th>
                                 </tr>
                             </thead>
                             <tbody>
                 `;
 
-                // วนลูปนำข้อมูลแต่ละแถวมาใส่ในตาราง
                 projects.forEach(project => {
+                    let statusColor = 'bg-gray-100 text-gray-800';
+                    if(project.status === 'กำลังก่อสร้าง') statusColor = 'bg-yellow-100 text-yellow-800';
+                    if(project.status === 'แล้วเสร็จ') statusColor = 'bg-green-100 text-green-800';
+                    if(project.status === 'ล่าช้ากว่าแผน') statusColor = 'bg-red-100 text-red-800';
+
                     tableHTML += `
-                        <tr class="hover:bg-gray-50 transition duration-150">
-                            <td class="py-2 px-4 border-b text-gray-600">${project.id}</td>
-                            <td class="py-2 px-4 border-b text-gray-800 font-medium">${project.project_name || '-'}</td>
-                            <td class="py-2 px-4 border-b text-gray-600">${project.contract_number || '-'}</td>
-                            <td class="py-2 px-4 border-b">
-                                <span class="px-2 py-1 bg-blue-100 text-blue-800 rounded text-xs font-bold">
-                                    ${project.status || 'รออัปเดต'}
+                        <tr class="hover:bg-gray-50 border-b">
+                            <td class="py-3 px-4 text-gray-800 font-medium">${project.project_name || '-'}</td>
+                            <td class="py-3 px-4 text-gray-600">${project.contract_number || '-'}</td>
+                            <td class="py-3 px-4">
+                                <span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">
+                                    ${project.status || 'ไม่มีข้อมูล'}
                                 </span>
                             </td>
                         </tr>
@@ -135,21 +180,75 @@
                 });
 
                 tableHTML += `</tbody></table></div>`;
-                
-                // นำตารางไปแสดงในหน้าเว็บแทนที่กล่องข้อความเดิม
                 container.innerHTML = tableHTML;
-                container.classList.remove('border-dashed', 'border-2', 'p-12', 'text-center');
 
             } catch (err) {
                 console.error("Fetch Error:", err);
-                container.innerHTML = '<p class="text-red-500 font-bold">เกิดข้อผิดพลาดในการดึงข้อมูล โปรดลองรีเฟรชหน้าเว็บ</p>';
+                container.innerHTML = '<p class="text-red-500 font-bold py-8">เกิดข้อผิดพลาดในการดึงข้อมูล โปรดลองรีเฟรชหน้าเว็บ</p>';
             }
         }
+
+        // 3. จัดการ Modal เพิ่มโครงการ
+        const modal = document.getElementById('projectModal');
+        const addProjectBtn = document.getElementById('addProjectBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+        const projectForm = document.getElementById('projectForm');
+
+        // เปิด Modal
+        addProjectBtn.addEventListener('click', () => {
+            modal.classList.remove('hidden');
+        });
+
+        // ปิด Modal
+        closeModalBtn.addEventListener('click', () => {
+            modal.classList.add('hidden');
+            projectForm.reset();
+        });
+
+        // 4. กดบันทึกข้อมูลโครงการ
+        projectForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            const saveBtn = document.getElementById('saveProjectBtn');
+            saveBtn.innerText = 'กำลังบันทึก...';
+            saveBtn.disabled = true;
+
+            const newProject = {
+                project_name: document.getElementById('projectName').value,
+                contract_number: document.getElementById('contractNum').value,
+                status: document.getElementById('projectStatus').value,
+                department_id: userDepartmentId // อ้างอิงแขวงจากคนที่ล็อกอิน
+            };
+
+            try {
+                const { error } = await supabaseClient
+                    .from('doh_projects_v3')
+                    .insert([newProject]);
+
+                if (error) throw error;
+
+                alert('เพิ่มโครงการสำเร็จ!');
+                modal.classList.add('hidden');
+                projectForm.reset();
+                
+                // รีเฟรชตารางใหม่เพื่อแสดงข้อมูลที่เพิ่งเพิ่ม
+                fetchProjects();
+
+            } catch (err) {
+                console.error("Insert Error:", err);
+                alert('เกิดข้อผิดพลาด: ' + err.message);
+            } finally {
+                saveBtn.innerText = 'บันทึกข้อมูล';
+                saveBtn.disabled = false;
+            }
+        });
+
+        // 5. ออกจากระบบ
         document.getElementById('logoutBtn').addEventListener('click', async function() {
             await supabaseClient.auth.signOut();
             window.location.href = 'index.html';
         });
 
+        // สั่งให้ตรวจสอบสิทธิ์ทันทีที่โหลดหน้าเว็บเสร็จ
         checkSession();
     </script>
 </body>

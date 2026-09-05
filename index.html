@@ -54,13 +54,13 @@
             const loginBtn = document.getElementById('loginBtn');
             const errorMessage = document.getElementById('errorMessage');
 
-            // เปลี่ยนสถานะปุ่ม
+            // เปลี่ยนสถานะปุ่มขณะรอโหลด
             loginBtn.innerText = 'กำลังตรวจสอบ...';
             loginBtn.disabled = true;
             errorMessage.classList.add('hidden');
 
             try {
-                // เช็คจุดที่ 1: ต้องใช้ supabaseClient
+                // ส่งข้อมูลไปตรวจสอบกับระบบ Auth ต้องใช้ supabaseClient
                 const { data, error } = await supabaseClient.auth.signInWithPassword({
                     email: email,
                     password: password,
@@ -68,7 +68,7 @@
 
                 if (error) throw error;
 
-                // เช็คจุดที่ 2: ต้องใช้ supabaseClient
+                // 3. หากล็อกอินสำเร็จ ให้ดึงสิทธิ์ (Role) จากตาราง doh_profiles_v3 ต้องใช้ supabaseClient
                 const userId = data.user.id;
                 const { data: profileData, error: profileError } = await supabaseClient
                     .from('doh_profiles_v3')
@@ -78,6 +78,7 @@
 
                 if (profileError) throw profileError;
 
+                // แสดงผลลัพธ์ (สเตปต่อไปเราจะเปลี่ยนเป็นการเด้งไปหน้า Dashboard ของแต่ละสิทธิ์)
                 // บันทึกสิทธิ์และเปลี่ยนหน้าไป Dashboard ทันที (ให้ Dashboard เป็นคนเด้ง Alert)
                 localStorage.setItem('loginSuccessRole', profileData.role);
                 window.location.href = 'dashboard.html';
@@ -88,6 +89,7 @@
                 errorMessage.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง';
                 errorMessage.classList.remove('hidden');
             } finally {
+                // คืนสถานะปุ่มกลับมา
                 loginBtn.innerText = 'เข้าสู่ระบบ';
                 loginBtn.disabled = false;
             }
