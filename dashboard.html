@@ -41,31 +41,96 @@
         </div>
     </div>
 
-    <!-- หน้าต่าง Pop-up (Modal) สำหรับเพิ่มโครงการ -->
-    <div id="projectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-        <div class="bg-white rounded-lg w-full max-w-md p-6 shadow-xl">
-            <h3 class="text-xl font-bold mb-4 text-blue-800">เพิ่มโครงการใหม่</h3>
+<!-- หน้าต่าง Pop-up (Modal) สำหรับเพิ่มโครงการ (V2 Style) -->
+    <div id="projectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
+        <div class="bg-white rounded-lg w-full max-w-5xl p-6 shadow-xl my-8">
+            <h3 class="text-xl font-bold mb-4 text-purple-800 flex items-center gap-2">
+                <span class="text-2xl">+</span> เพิ่มโครงการใหม่
+            </h3>
             <form id="projectForm">
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">ชื่อโครงการ</label>
-                    <input type="text" id="projectName" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <!-- แถวที่ 1 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">ชื่อโครงการ *</label>
+                        <input type="text" id="projectName" required placeholder="ชื่อโครงการ" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">ปีงบประมาณ</label>
+                        <input type="text" id="fiscalYear" placeholder="เช่น 2570" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">แหล่งทุน</label>
+                        <input type="text" id="fundingSource" placeholder="เช่น งบประมาณแผ่นดิน" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
                 </div>
-                <div class="mb-4">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">เลขที่สัญญา</label>
-                    <input type="text" id="contractNum" class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
+
+                <!-- แถวที่ 2 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">สถานะ</label>
+                        <select id="projectStatus" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                            <option value="รอดำเนินการ">📌 รอดำเนินการ</option>
+                            <option value="กำลังก่อสร้าง">🚧 กำลังก่อสร้าง</option>
+                            <option value="ล่าช้ากว่าแผน">⚠️ ล่าช้ากว่าแผน</option>
+                            <option value="แล้วเสร็จ">✅ แล้วเสร็จ</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">เลขที่สัญญา</label>
+                        <input type="text" id="contractNum" placeholder="เลขที่สัญญา" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">ผู้รับจ้าง</label>
+                        <input type="text" id="contractor" placeholder="ชื่อผู้รับจ้าง" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
                 </div>
+
+                <!-- แถวที่ 3 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">หมายเลขสายทาง</label>
+                        <input type="text" id="routeNum" placeholder="เช่น ทล.4, ทล.401" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">ชื่อช่วงทาง</label>
+                        <input type="text" id="sectionName" placeholder="ชื่อช่วง/ส่วนงาน" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">ช่วงกิโลเมตร</label>
+                        <input type="text" id="kmRange" placeholder="เช่น กม.0+000 - กม.5+200" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+
+                <!-- แถวที่ 4 -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">ความก้าวหน้า (%)</label>
+                        <input type="number" id="progressPercent" value="0" min="0" max="100" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">งบประมาณทั้งหมด</label>
+                        <input type="number" id="totalBudget" value="0.00" step="0.01" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">จ่ายเงินแล้ว</label>
+                        <input type="number" id="paidAmount" value="0.00" step="0.01" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
+
+                <!-- หมายเหตุ -->
                 <div class="mb-6">
-                    <label class="block text-gray-700 text-sm font-bold mb-2">สถานะ</label>
-                    <select id="projectStatus" class="shadow border rounded w-full py-2 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500">
-                        <option value="รอดำเนินการ">รอดำเนินการ</option>
-                        <option value="กำลังก่อสร้าง">กำลังก่อสร้าง</option>
-                        <option value="ล่าช้ากว่าแผน">ล่าช้ากว่าแผน</option>
-                        <option value="แล้วเสร็จ">แล้วเสร็จ</option>
-                    </select>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">รายละเอียด / หมายเหตุ</label>
+                    <textarea id="projectNotes" rows="3" placeholder="บันทึกรายละเอียด..." class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500"></textarea>
                 </div>
-                <div class="flex justify-end gap-3">
-                    <button type="button" id="closeModalBtn" class="bg-gray-400 hover:bg-gray-500 text-white px-4 py-2 rounded font-bold">ยกเลิก</button>
-                    <button type="submit" id="saveProjectBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded font-bold">บันทึกข้อมูล</button>
+
+                <!-- ปุ่มบันทึก/ยกเลิก -->
+                <div class="flex justify-start gap-3 border-t pt-4">
+                    <button type="submit" id="saveProjectBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded flex items-center gap-2 font-bold shadow">
+                        💾 บันทึก
+                    </button>
+                    <button type="button" id="closeModalBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded flex items-center gap-2 font-bold shadow">
+                        ❌ ยกเลิก
+                    </button>
                 </div>
             </form>
         </div>
@@ -205,17 +270,28 @@
             projectForm.reset();
         });
 
-        // 4. กดบันทึกข้อมูลโครงการ
+// 4. กดบันทึกข้อมูลโครงการ
         projectForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const saveBtn = document.getElementById('saveProjectBtn');
-            saveBtn.innerText = 'กำลังบันทึก...';
+            saveBtn.innerHTML = '⏳ กำลังบันทึก...';
             saveBtn.disabled = true;
 
+            // กวาดข้อมูลจากทุกช่องในฟอร์ม
             const newProject = {
                 project_name: document.getElementById('projectName').value,
-                contract_number: document.getElementById('contractNum').value,
+                fiscal_year: document.getElementById('fiscalYear').value,
+                funding_source: document.getElementById('fundingSource').value,
                 status: document.getElementById('projectStatus').value,
+                contract_number: document.getElementById('contractNum').value,
+                contractor: document.getElementById('contractor').value,
+                route_number: document.getElementById('routeNum').value,
+                section_name: document.getElementById('sectionName').value,
+                km_range: document.getElementById('kmRange').value,
+                progress_percent: parseFloat(document.getElementById('progressPercent').value) || 0,
+                total_budget: parseFloat(document.getElementById('totalBudget').value) || 0,
+                paid_amount: parseFloat(document.getElementById('paidAmount').value) || 0,
+                notes: document.getElementById('projectNotes').value,
                 department_id: userDepartmentId // อ้างอิงแขวงจากคนที่ล็อกอิน
             };
 
@@ -230,14 +306,14 @@
                 modal.classList.add('hidden');
                 projectForm.reset();
                 
-                // รีเฟรชตารางใหม่เพื่อแสดงข้อมูลที่เพิ่งเพิ่ม
+                // รีเฟรชตารางใหม่
                 fetchProjects();
 
             } catch (err) {
                 console.error("Insert Error:", err);
                 alert('เกิดข้อผิดพลาด: ' + err.message);
             } finally {
-                saveBtn.innerText = 'บันทึกข้อมูล';
+                saveBtn.innerHTML = '💾 บันทึก';
                 saveBtn.disabled = false;
             }
         });
