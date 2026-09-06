@@ -453,23 +453,29 @@
         }
 
         // 4. ฟังก์ชันอัปโหลดรูปลง Supabase Storage
-        async function uploadImage(fileInputId) {
+async function uploadImage(fileInputId) {
             const fileInput = document.getElementById(fileInputId);
             const file = fileInput.files[0];
-            if (!file) return null; // ถ้าไม่ได้เลือกรูป ให้ข้ามไป
-            // สร้างชื่อไฟล์ใหม่ไม่ให้ซ้ำกัน (ใช้เวลาปัจจุบัน + สุ่มตัวอักษร)
+            if (!file) return null; 
+
             const fileExt = file.name.split('.').pop();
             const fileName = `${Date.now()}_${Math.random().toString(36).substring(2)}.${fileExt}`;
-            const filePath = `progress/${fileName}`; // เก็บในโฟลเดอร์ชื่อ progress
+            const filePath = `progress/${fileName}`; 
 
             try {
-                // 1. อัปโหลดไฟล์ไปที่ Bucket 'project_photos'
                 const { error: uploadError } = await supabaseClient.storage.from('project_photos').upload(filePath, file);
-                if (uploadError) throw uploadError;
-                // 2. ดึง URL แบบ Public ของรูปที่เพิ่งอัปโหลดเสร็จ
+                
+                // ถ้ามี Error ให้แจ้งเตือนโชว์บนหน้าจอเลย
+                if (uploadError) {
+                    console.error("Storage Error:", uploadError);
+                    alert(`อัปโหลดรูปไม่สำเร็จ: ${uploadError.message}\n(น่าจะลืมทำ Storage Policy ครับ)`);
+                    return null;
+                }
+                
                 const { data } = supabaseClient.storage.from('project_photos').getPublicUrl(filePath);
                 return data.publicUrl;
             } catch (err) {
+                console.error("Catch Error:", err);
                 return null;
             }
         }
