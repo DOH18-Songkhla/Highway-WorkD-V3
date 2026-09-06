@@ -17,7 +17,6 @@
             <h1 class="text-xl font-bold">Highway WorkD V.3</h1>
         </div>
         <div class="flex items-center gap-4">
-            <!-- แสดงชื่อและตำแหน่งที่มุมขวาบน -->
             <div id="userInfo" class="text-sm">กำลังโหลดข้อมูล...</div>
             <button id="logoutBtn" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded text-sm font-bold shadow transition duration-150">
                 ออกจากระบบ
@@ -30,18 +29,14 @@
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex justify-between items-center mb-4">
                 <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
-                <!-- ปุ่มเพิ่มโครงการจะแสดงเฉพาะสิทธิ์ที่เหมาะสมในอนาคต -->
                 <button id="addProjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow hidden">
                     + เพิ่มโครงการใหม่
                 </button>
             </div>
 
-            <!-- 📌 3. พื้นที่สำหรับ แท็บปีงบประมาณ พ.ศ. -->
-            <div id="yearTabsContainer" class="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide">
-                <!-- แท็บจะถูกสร้างอัตโนมัติด้วย JavaScript -->
-            </div>
+            <!-- 📌 พื้นที่สำหรับ แท็บปีงบประมาณ พ.ศ. -->
+            <div id="yearTabsContainer" class="flex gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide"></div>
 
-            <!-- พื้นที่สำหรับแสดงตารางข้อมูล (เดี๋ยวเรามาเขียนโค้ดดึงข้อมูลใส่ตรงนี้กันครับ) -->
             <div id="projectContainer" class="p-4 text-center text-gray-500 rounded bg-gray-50 border border-gray-200">
                 กำลังโหลดข้อมูล...
             </div>
@@ -49,17 +44,15 @@
     </div>
 
     <!-- ============================================ -->
-    <!-- 1. หน้าต่าง Pop-up สำหรับเพิ่ม/แก้ไขโครงการ (V2 Style) -->
+    <!-- หน้าต่าง Pop-up สำหรับเพิ่ม/แก้ไขโครงการ -->
     <!-- ============================================ -->
     <div id="projectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-        <!-- 📌 จุดที่แก้ไขแก้ปัญหาล้นจอ: เพิ่ม max-h-[90vh] overflow-y-auto ตรงนี้ครับ -->
         <div class="bg-white rounded-lg w-full max-w-5xl p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-4 text-purple-800 flex items-center gap-2">
                 <span class="text-2xl">+</span> เพิ่มโครงการใหม่
             </h3>
-			
+            
             <form id="projectForm">
-                <!-- แถวที่ 1 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-1">ชื่อโครงการ *</label>
@@ -75,7 +68,6 @@
                     </div>
                 </div>
 
-                <!-- แถวที่ 2 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-1">สถานะ</label>
@@ -99,7 +91,6 @@
                     </div>
                 </div>
 
-                <!-- แถวที่ 3 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-1">หมายเลขสายทาง</label>
@@ -115,7 +106,6 @@
                     </div>
                 </div>
 
-                <!-- 📌 2. แก้ไขส่วนกรอกความก้าวหน้าเป็น 3 ช่อง -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4 bg-gray-50 p-3 rounded-lg border border-gray-200">
                     <div>
                         <label class="block text-blue-800 text-sm font-bold mb-1">แผนงาน (%)</label>
@@ -131,7 +121,6 @@
                     </div>
                 </div>
 
-                <!-- แยกส่วนการเงินออกมาต่างหาก -->
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-1">งบประมาณทั้งหมด</label>
@@ -142,20 +131,17 @@
                         <input type="number" id="paidAmount" value="0.00" step="0.01" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
                     </div>
                 </div>
-                <!-- คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน -->
+
                 <div class="mb-6 border-t pt-4">
                     <label class="block text-purple-800 text-md font-bold mb-2 flex items-center gap-2">
                         👥 คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน
                     </label>
-                    <div id="committeeContainer" class="space-y-2">
-                        <!-- แถวรายชื่อคณะกรรมการจะถูกเพิ่มที่นี่อัตโนมัติ -->
-                    </div>
+                    <div id="committeeContainer" class="space-y-2"></div>
                     <button type="button" id="addCommitteeBtn" class="mt-3 bg-gray-100 hover:bg-gray-200 text-gray-700 px-4 py-2 rounded text-sm shadow-sm border flex items-center gap-1 font-medium">
                         + เพิ่มรายชื่อ
                     </button>
                 </div>
                 
-                <!-- ส่วนอัปโหลดรูปภาพ -->
                 <div class="mb-6 border-t pt-4">
                     <label class="block text-purple-800 text-md font-bold mb-2 flex items-center gap-2">
                         📸 รูปภาพความก้าวหน้าหน้างาน (เลือกได้สูงสุด 4 รูป)
@@ -168,13 +154,11 @@
                     </div>
                 </div>
                 
-                <!-- หมายเหตุ -->
                 <div class="mb-6">
                     <label class="block text-gray-700 text-sm font-bold mb-1">รายละเอียด / หมายเหตุ</label>
                     <textarea id="projectNotes" rows="3" placeholder="บันทึกรายละเอียด..." class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500"></textarea>
                 </div>
 
-                <!-- ปุ่มบันทึก/ยกเลิก -->
                 <div class="flex justify-start gap-3 border-t pt-4">
                     <button type="submit" id="saveProjectBtn" class="bg-teal-600 hover:bg-teal-700 text-white px-6 py-2 rounded flex items-center gap-2 font-bold shadow">💾 บันทึก</button>
                     <button type="button" id="closeModalBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded flex items-center gap-2 font-bold shadow">❌ ยกเลิก</button>
@@ -182,46 +166,36 @@
             </form>
         </div>
     </div>
-                <!-- =================================================== -->
-                <!-- หน้าต่าง Pop-up สำหรับดูรายละเอียดโครงการและรูปภาพ (View Modal)  -->
-				<!-- =================================================== -->
+
+    <!-- =================================================== -->
+    <!-- หน้าต่าง Pop-up สำหรับดูรายละเอียดโครงการ (View Modal) -->
+    <!-- =================================================== -->
     <div id="viewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
         <div class="bg-white rounded-xl w-full max-w-5xl p-6 shadow-2xl max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
                 <h3 class="text-xl font-bold text-blue-900 flex items-center gap-2">🔍 ดูรายละเอียดข้อมูลโครงการ</h3>
                 <button type="button" id="closeViewModalBtn" class="text-gray-400 hover:text-red-500 font-bold text-2xl px-2">✕</button>
             </div>
-            <!-- พื้นที่แสดงข้อมูลที่จะถูกเติมด้วย JavaScript -->
             <div id="viewContent"></div>
         </div>
     </div>
 
-<!-- ========================================== -->
-<!-- ส่วนของ JavaScript -->
-<!-- ========================================== -->
-<script>
-        // 1. ตั้งค่าการเชื่อมต่อ (ใช้ Key เดิมของคุณ)
+    <script>
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        let userDepartmentId = null; // ตัวแปรเก็บสังกัดของคนที่ล็อกอิน
-        let userRole = null; // เก็บ Role ของผู้ใช้ปัจจุบัน
-        
-        // ตัวแปรสำหรับระบบแก้ไข (Edit System)
+        let userDepartmentId = null;
+        let userRole = null;
         let currentEditId = null; 
         let currentExistingPhotos = {}; 
-
-        // ตัวแปรสำหรับระบบแท็บปี พ.ศ.
         let allProjectsData = [];
         let currentYearTab = 'ทั้งหมด';
 
-        // 1. ตรวจสอบสิทธิ์ผู้ใช้งาน
         async function checkSession() {
-            // ดึงข้อมูล session ปัจจุบัน
             const { data: { session } } = await supabaseClient.auth.getSession();            
-            // ถ้าไม่มี session (ยังไม่ได้ล็อกอิน) ให้เตะกลับไปหน้า Login
             if (!session) {window.location.href = 'index.html'; return;}
+            
             const user = session.user;
             const { data: profileData } = await supabaseClient.from('doh_profiles_v3').select('*').eq('id', user.id).single();
 
@@ -236,34 +210,26 @@
                 if (profileData.role === 'super_admin' || profileData.role === 'admin') {
                     document.getElementById('addProjectBtn').classList.remove('hidden');
                 }
-                // สั่งดึงข้อมูลโครงการมาแสดง
                 fetchProjects();
             }
         }
 
-        // 2. ดึงข้อมูลโครงการมาสร้างตาราง
         async function fetchProjects() {
             const container = document.getElementById('projectContainer');
             try {
                 const { data: projects, error } = await supabaseClient.from('doh_projects_v3').select('*').order('created_at', { ascending: false });
                 if (error) throw error;
                 
-                // เก็บข้อมูลดิบไว้ใช้กับระบบแท็บ
                 allProjectsData = projects || [];
-                
-                // สร้างแท็บ และ วาดตาราง
                 renderYearTabs();
                 renderTable();
-
             } catch (err) {
                 container.innerHTML = '<p class="text-red-500 font-bold py-8">เกิดข้อผิดพลาดในการดึงข้อมูล โปรดลองรีเฟรชหน้าเว็บ</p>';
             }
         }
 
-        // ฟังก์ชันวาดแท็บ ปี พ.ศ.
         function renderYearTabs() {
             const tabsContainer = document.getElementById('yearTabsContainer');
-            // กรองหาปีที่ไม่ซ้ำกัน และเรียงจากปีล่าสุดไปอดีต
             const years = [...new Set(allProjectsData.map(p => p.fiscal_year).filter(y => y))].sort((a, b) => b - a);
             
             let tabsHTML = `<button onclick="filterByYear('ทั้งหมด')" class="px-5 py-1.5 rounded-full text-sm font-bold whitespace-nowrap transition border ${currentYearTab === 'ทั้งหมด' ? 'bg-blue-600 text-white border-blue-600 shadow-md' : 'bg-white text-gray-600 hover:bg-blue-50'}">ทั้งหมด</button>`;
@@ -274,19 +240,16 @@
             tabsContainer.innerHTML = tabsHTML;
         }
 
-        // ฟังก์ชันเมื่อกดแท็บ
         function filterByYear(year) {
             currentYearTab = year;
             renderYearTabs(); 
             renderTable(); 
         }
 
-        // ฟังก์ชันวาดตาราง
         function renderTable() {
             const container = document.getElementById('projectContainer');
             let displayProjects = allProjectsData;
 
-            // ถ้าไม่ได้เลือก "ทั้งหมด" ให้กรองข้อมูลตามปี พ.ศ.
             if (currentYearTab !== 'ทั้งหมด') {
                 displayProjects = displayProjects.filter(p => p.fiscal_year === currentYearTab);
             }
@@ -312,20 +275,17 @@
             `;
 
             displayProjects.forEach(project => {
-                    // 1. เช็คสถานะแจ้งเตือนเพื่อสร้างจุดแดง
-                    const redDot = project.has_new_update 
-                        ? `<span class="inline-block w-4 h-4 bg-red-500 rounded-full mr-2 flex-shrink-0 shadow-sm animate-pulse"></span>` : '';
+                const redDot = project.has_new_update 
+                    ? `<span class="inline-block w-4 h-4 bg-red-500 rounded-full mr-2 flex-shrink-0 shadow-sm animate-pulse"></span>` : '';
 
-                    // 2. จัดการสีของสถานะโครงการ
-                    let statusColor = 'bg-gray-100 text-gray-800'; 
-                    if(project.status === 'ระหว่างก่อสร้าง') statusColor = 'bg-yellow-100 text-yellow-800';
-                    if(project.status === 'รอส่งมอบงาน') statusColor = 'bg-blue-100 text-blue-800';
-                    if(project.status === 'รอเบิกจ่าย') statusColor = 'bg-purple-100 text-purple-800';
-                    if(project.status === 'ล่าช้ากว่าแผน') statusColor = 'bg-orange-100 text-orange-800';
-                    if(project.status === 'แล้วเสร็จ') statusColor = 'bg-green-100 text-green-800';
-                    if(project.status === 'บอกเลิกสัญญา') statusColor = 'bg-red-600 text-white';
+                let statusColor = 'bg-gray-100 text-gray-800'; 
+                if(project.status === 'ระหว่างก่อสร้าง') statusColor = 'bg-yellow-100 text-yellow-800';
+                if(project.status === 'รอส่งมอบงาน') statusColor = 'bg-blue-100 text-blue-800';
+                if(project.status === 'รอเบิกจ่าย') statusColor = 'bg-purple-100 text-purple-800';
+                if(project.status === 'ล่าช้ากว่าแผน') statusColor = 'bg-orange-100 text-orange-800';
+                if(project.status === 'แล้วเสร็จ') statusColor = 'bg-green-100 text-green-800';
+                if(project.status === 'บอกเลิกสัญญา') statusColor = 'bg-red-600 text-white';
 
-                // 📌 1. เพิ่มแถบ Progress Bar ในตาราง
                 const progressVal = project.progress_percent || 0;
                 const progressBarHTML = `
                     <div class="flex items-center gap-2 w-full min-w-[120px]">
@@ -336,20 +296,15 @@
                     </div>
                 `;
 
-                    tableHTML += `
-                        <tr class="hover:bg-gray-50 transition border-b">
-                            <!-- คอลัมน์ 1: เลขที่สัญญา -->      
-                            <td class="py-3 px-4 text-gray-600">${project.contract_number || '-'}</td>
-							<!-- คอลัมน์ 2: ชื่อโครงการ (และจุดแดงแจ้งเตือน) -->
-                            <td class="py-3 px-4 text-gray-800 font-medium flex items-center">
-                                ${redDot} ${project.project_name || '-'}
-                            </td>
-                            <!-- คอลัมน์ 3: สถานะ -->
-                            <td class="py-3 px-4">${progressBarHTML}</td>
-                            <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${project.status || 'ไม่มีข้อมูล'}</span></td>
-                            </td>
-							<!-- คอลัมน์ 4: จัดการ -->
-                            <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
+                tableHTML += `
+                    <tr class="hover:bg-gray-50 transition border-b">
+                        <td class="py-3 px-4 text-gray-600">${project.contract_number || '-'}</td>
+                        <td class="py-3 px-4 text-gray-800 font-medium flex items-center">
+                            ${redDot} ${project.project_name || '-'}
+                        </td>
+                        <td class="py-3 px-4">${progressBarHTML}</td>
+                        <td class="py-3 px-4"><span class="px-2 py-1 rounded text-xs font-bold ${statusColor}">${project.status || 'ไม่มีข้อมูล'}</span></td>
+                        <td class="py-3 px-4 text-right space-x-1 whitespace-nowrap">
                             <button onclick="viewProject('${project.id}')" class="bg-blue-50 text-blue-600 hover:bg-blue-100 px-2.5 py-1.5 rounded text-xs font-semibold border transition">🔍 ดู</button>
                             <button onclick="editProject('${project.id}')" class="bg-amber-50 text-amber-600 hover:bg-amber-100 px-2.5 py-1.5 rounded text-xs font-semibold border transition">✏️ แก้ไข</button>
                             <button onclick="deleteProject('${project.id}', '${project.project_name}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-2.5 py-1.5 rounded text-xs font-semibold border transition">🗑️ ลบ</button>
@@ -362,16 +317,13 @@
             container.innerHTML = tableHTML;
         }
 
-        // 3. จัดการ Modal ฟอร์ม (ใช้ร่วมกันระหว่าง เพิ่ม และ แก้ไข)
         const modal = document.getElementById('projectModal');
         const projectForm = document.getElementById('projectForm');
         const addProjectBtn = document.getElementById('addProjectBtn');
         const closeModalBtn = document.getElementById('closeModalBtn');
-        // ระบบจัดการรายชื่อคณะกรรมการ
         const committeeContainer = document.getElementById('committeeContainer');
         const addCommitteeBtn = document.getElementById('addCommitteeBtn');
 
-        // ฟังก์ชันสร้างแถวคณะกรรมการ (ปรับให้รองรับการดึงข้อมูลเก่ามาโชว์)
         function addCommitteeRow(name = '', position = '', role = '') {
             const row = document.createElement('div');
             row.className = 'flex gap-2 items-center committee-row';
@@ -388,42 +340,31 @@
                 <button type="button" class="text-red-400 hover:text-red-600 font-bold px-2 remove-c-btn">✕</button>
             `;
             committeeContainer.appendChild(row);
-            // ใส่ข้อมูลเก่าลงไปในช่อง
             row.querySelector('.c-name').value = name;
             row.querySelector('.c-position').value = position;
             row.querySelector('.c-role').value = role;
-            // คำสั่งลบแถวเมื่อกดปุ่มกากบาท
             row.querySelector('.remove-c-btn').addEventListener('click', () =>row.remove());
         }
         addCommitteeBtn.addEventListener('click', () => addCommitteeRow());
 
-        // ปุ่มปิด Modal
         closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
 
-        // 🟢 1. กดปุ่ม "เพิ่มโครงการใหม่" (โหมด Add)
         addProjectBtn.addEventListener('click', () => {
-            currentEditId = null; // รีเซ็ตสถานะเป็น "สร้างใหม่"
+            currentEditId = null; 
             currentExistingPhotos = {};
-            
-            // เปลี่ยนหัวข้อและปุ่มให้เป็นโหมดสร้าง
             document.querySelector('#projectModal h3').innerHTML = '<span class="text-2xl">+</span> เพิ่มโครงการใหม่';
             projectForm.reset();
             committeeContainer.innerHTML = ''; addCommitteeRow(); 
             modal.classList.remove('hidden');
         });
 
-        // 🟠 2. กดปุ่ม "แก้ไข" ในตาราง (โหมด Edit)
         async function editProject(projectId) {
-            currentEditId = projectId; // บันทึก ID ที่กำลังจะแก้
-
-            // เปลี่ยนหัวข้อและปุ่มให้เป็นโหมดแก้ไข
+            currentEditId = projectId; 
             document.querySelector('#projectModal h3').innerHTML = '<span class="text-2xl">✏️</span> แก้ไขข้อมูลโครงการ';
             try {
-                // ดึงข้อมูลโครงการจากฐานข้อมูล
                 const { data: project, error } = await supabaseClient.from('doh_projects_v3').select('*').eq('id', projectId).single();
                 if (error) throw error;
 
-                // หยอดข้อมูลลงในฟอร์ม
                 document.getElementById('projectName').value = project.project_name || '';
                 document.getElementById('fiscalYear').value = project.fiscal_year || '';
                 document.getElementById('fundingSource').value = project.funding_source || '';
@@ -434,7 +375,6 @@
                 document.getElementById('sectionName').value = project.section_name || '';
                 document.getElementById('kmRange').value = project.km_range || '';
                 
-                // โหลดข้อมูล 3 ช่องเปอเซ็นต์
                 document.getElementById('planPercent').value = project.plan_percent || 0;
                 document.getElementById('actualPercent').value = project.actual_percent || 0;
                 document.getElementById('progressPercent').value = project.progress_percent || 0;
@@ -443,50 +383,44 @@
                 document.getElementById('paidAmount').value = project.paid_amount || 0;
                 document.getElementById('projectNotes').value = project.notes || '';
 
-                // หยอดข้อมูลคณะกรรมการ
                 committeeContainer.innerHTML = '';
                 if (project.committee_members && project.committee_members.length > 0) {
                     project.committee_members.forEach(c => addCommitteeRow(c.name, c.position, c.role));
                 } else addCommitteeRow();
 
-                // สำรองข้อมูลรูปรถเก็บไว้ (เผื่ออัปเดตแบบไม่ได้แนบรูปใหม่)
                 currentExistingPhotos = { photo_1: project.photo_1, photo_2: project.photo_2, photo_3: project.photo_3, photo_4: project.photo_4 };
                 modal.classList.remove('hidden');
             } catch (err) { alert('โหลดข้อมูลล้มเหลว: ' + err.message); }
         }
 
-        // 4. ฟังก์ชันอัปโหลดรูปลง Supabase Storage
         async function uploadImage(fileInputId) {
             const file = document.getElementById(fileInputId).files[0];
             if (!file) return null; 
             const filePath = `progress/${Date.now()}_${Math.random().toString(36).substring(2)}.${file.name.split('.').pop()}`; 
             try {
-                // 1. อัปโหลดไฟล์ไปที่ Bucket 'project_photos'
                 const { error } = await supabaseClient.storage.from('project_photos').upload(filePath, file);
                 if (error) { alert(`อัปโหลดรูปไม่สำเร็จ: ${error.message}`); return null; }
                 return supabaseClient.storage.from('project_photos').getPublicUrl(filePath).data.publicUrl;
             } catch (err) { return null; }
         }
         
-        // 5. 💾 ฟังก์ชันกดบันทึก (รับมือได้ทั้ง สร้างใหม่ และ อัปเดต)
         projectForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const saveBtn = document.getElementById('saveProjectBtn');
             saveBtn.innerHTML = '⏳ กำลังประมวลผล...'; saveBtn.disabled = true;
 
             try {
-                // --- ส่วนที่ 1: อัปโหลดรูปภาพทั้งหมด ถ้าไม่ได้เลือกไฟล์รูปใหม่มา ให้ใช้รูปเก่า (currentExistingPhotos) หรือถ้าสร้างใหม่จะกลายเป็น null
                 const p1 = await uploadImage('photo1') || currentExistingPhotos.photo_1 || null;
                 const p2 = await uploadImage('photo2') || currentExistingPhotos.photo_2 || null;
                 const p3 = await uploadImage('photo3') || currentExistingPhotos.photo_3 || null;
                 const p4 = await uploadImage('photo4') || currentExistingPhotos.photo_4 || null;
-                // --- ส่วนที่ 2: กวาดข้อมูลคณะกรรมการ ---
+
                 const committeeMembers = [];
                 document.querySelectorAll('.committee-row').forEach(row => {
                     const name = row.querySelector('.c-name').value.trim();
                     if (name) committeeMembers.push({ name, position: row.querySelector('.c-position').value, role: row.querySelector('.c-role').value });
                 });
-                // --- ส่วนที่ 3: รวมข้อมูลทั้งหมดส่งเข้าฐานข้อมูล ---
+
                 const projectData = {
                     project_name: document.getElementById('projectName').value,
                     fiscal_year: document.getElementById('fiscalYear').value,
@@ -498,7 +432,6 @@
                     section_name: document.getElementById('sectionName').value,
                     km_range: document.getElementById('kmRange').value,
                     
-                    // บันทึก 3 ช่องเปอเซ็นต์
                     plan_percent: parseFloat(document.getElementById('planPercent').value) || 0,
                     actual_percent: parseFloat(document.getElementById('actualPercent').value) || 0,
                     progress_percent: parseFloat(document.getElementById('progressPercent').value) || 0,
@@ -508,20 +441,21 @@
                     notes: document.getElementById('projectNotes').value,
                     department_id: userDepartmentId,
                     committee_members: committeeMembers,
-                    // ใส่ URL รูปภาพที่ได้มาลงฐานข้อมูล (ถ้าไม่ได้อัปโหลดจะเป็น null)
                     photo_1: p1, photo_2: p2, photo_3: p3, photo_4: p4
                 };
 
                 if (currentEditId) {
-                    // โหมดแก้ไข (Update)
-                    // ถ้า admin หรือผู้รับผิดชอบเป็นคนแก้ ให้โชว์จุดแดงแจ้งเตือน แต่ถ้าคุณ (super_admin) เป็นคนแก้ ให้จุดแดงดับ
                     projectData.has_new_update = (userRole !== 'super_admin'); 
-
-                    await supabaseClient.from('doh_projects_v3').update(projectData).eq('id', currentEditId);
+                    // 📌 จุดสำคัญที่ขาดหายไป: ดัก Error ตอน Update
+                    const { error } = await supabaseClient.from('doh_projects_v3').update(projectData).eq('id', currentEditId);
+                    if (error) throw error;
+                    alert('✅ อัปเดตข้อมูลสำเร็จ!');
                 } else {
-                    // โหมดสร้างใหม่ (Insert)
-                    projectData.has_new_update = true; // สร้างใหม่ให้แจ้งเตือนด้วย
-                    await supabaseClient.from('doh_projects_v3').insert([projectData]);
+                    projectData.has_new_update = true; 
+                    // 📌 จุดสำคัญที่ขาดหายไป: ดัก Error ตอน Insert
+                    const { error } = await supabaseClient.from('doh_projects_v3').insert([projectData]);
+                    if (error) throw error;
+                    alert('✅ เพิ่มโครงการใหม่สำเร็จ!');
                 }
 
                 modal.classList.add('hidden'); projectForm.reset(); fetchProjects();
@@ -529,12 +463,10 @@
             finally { saveBtn.innerHTML = '💾 บันทึก'; saveBtn.disabled = false; }
         });
 
-        // 6. 🔴 ออกจากระบบ
         document.getElementById('logoutBtn').addEventListener('click', async () => {
             await supabaseClient.auth.signOut(); window.location.href = 'index.html';
         });
 
-        // 7. 🔍 ดูรายละเอียด และ 🗑️ ลบ (ใช้โค้ดเดิมที่ใช้งานได้ดีแล้ว)
         const viewModal = document.getElementById('viewModal');
         const viewContent = document.getElementById('viewContent');
         document.getElementById('closeViewModalBtn').addEventListener('click', () => viewModal.classList.add('hidden'));
@@ -545,16 +477,13 @@
 
             try {
                 const { data: p, error } = await supabaseClient.from('doh_projects_v3').select('*').eq('id', projectId).single();
-
                 if (error) throw error;
 
-                // เคลียร์จุดแดงแจ้งเตือนทันทีที่เปิดดู
                 if (p.has_new_update && userRole === 'super_admin') {
                     await supabaseClient.from('doh_projects_v3').update({ has_new_update: false }).eq('id', projectId);
-                    fetchProjects(); // สั่งรีเฟรชตารางหลังบ้านให้จุดแดงดับ
+                    fetchProjects(); 
                 }
 
-                // จัดการตารางรายชื่อคณะกรรมการ
                 let cHTML = '<p class="text-sm text-gray-400">ไม่มีข้อมูลคณะกรรมการ</p>';
                 if (p.committee_members?.length > 0) {
                     cHTML = `<div class="overflow-x-auto border rounded-lg"><table class="min-w-full text-xs text-left bg-gray-50"><thead class="bg-gray-100 border-b"><tr><th class="py-2 px-3">ชื่อ-นามสกุล</th><th class="py-2 px-3">ตำแหน่ง</th><th class="py-2 px-3">หน้าที่</th></tr></thead><tbody class="divide-y bg-white">`;
@@ -562,19 +491,12 @@
                     cHTML += `</tbody></table></div>`;
                 }
 
-                // จัดการรูปภาพ 4 รูป
-                const photos = [
-                    { title: "รูปที่ 1", url: project.photo_1 },
-                    { title: "รูปที่ 2", url: project.photo_2 },
-                    { title: "รูปที่ 3", url: project.photo_3 },
-                    { title: "รูปที่ 4", url: project.photo_4 }
-                ];
                 let photosHTML = '';
                 [p.photo_1, p.photo_2, p.photo_3, p.photo_4].forEach((url, i) => {
                     if (url) photosHTML += `<div class="border rounded-lg overflow-hidden shadow-sm bg-white"><a href="${url}" target="_blank"><img src="${url}" class="w-full h-44 object-cover hover:scale-105 transition"></a><div class="p-2 text-center text-xs font-semibold text-gray-600 bg-gray-50 border-t">รูปที่ ${i+1}</div></div>`;
-                    else photosHTML += `<div class="border-2 border-dashed border-gray-200 rounded-lg h-44 flex flex-col items-center justify-center text-gray-400 bg-gray-50"><span class="text-2xl mb-1">�</span><span class="text-xs">ไม่มีรูปที่ ${i+1}</span></div>`;
+                    else photosHTML += `<div class="border-2 border-dashed border-gray-200 rounded-lg h-44 flex flex-col items-center justify-center text-gray-400 bg-gray-50"><span class="text-2xl mb-1">📷</span><span class="text-xs">ไม่มีรูปที่ ${i+1}</span></div>`;
                 });
-                // วาดเนื้อหาลงใน Modal
+
                 viewContent.innerHTML = `
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
                         <div>
@@ -590,8 +512,7 @@
                             <span class="text-xs text-gray-500 font-bold mt-2 block">สถานะปัจจุบัน</span><span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-white border">${p.status||'-'}</span>
                         </div>
                     </div>
-					
-                    <!-- 📌 2. แสดงผลงาน 3 กรอบมนๆ -->
+
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center shadow-sm">
                             <span class="text-sm font-bold text-blue-800 block mb-1">แผนงาน</span>
@@ -622,17 +543,14 @@
                     <div class="mb-6 bg-yellow-50/60 p-3 rounded-lg border border-yellow-100"><h4 class="font-bold text-xs text-yellow-800 mb-1">📝 รายละเอียด / หมายเหตุ</h4><p class="text-sm text-gray-700 whitespace-pre-line">${p.notes||'ไม่มีบันทึกเพิ่มเติม'}</p></div>
                     <div><h4 class="font-bold text-sm text-gray-700 mb-3">📸 รูปภาพความก้าวหน้าหน้างาน</h4><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">${photosHTML}</div></div>
                 `;
-
             } catch (err) { viewContent.innerHTML = `<p class="text-red-500 text-center py-8">เกิดข้อผิดพลาด: ${err.message}</p>`; }
         }
 
-        // ==========================================
-        // 2. ฟังก์ชันลบโครงการ (Delete Project)
-        // ==========================================
         async function deleteProject(id, name) {
             if (!confirm(`⚠️ ยืนยันการลบโครงการ:\n"${name}"`)) return;
             try {
-                await supabaseClient.from('doh_projects_v3').delete().eq('id', id);
+                const { error } = await supabaseClient.from('doh_projects_v3').delete().eq('id', id);
+                if (error) throw error;
                 alert('🗑️ ลบโครงการเรียบร้อยแล้ว'); fetchProjects(); 
             } catch (err) { alert('เกิดข้อผิดพลาด: ' + err.message); }
         }
