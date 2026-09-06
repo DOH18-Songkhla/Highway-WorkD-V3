@@ -43,14 +43,16 @@
         </div>
     </div>
 
-    <!-- ========================================== -->
-    <!-- 1. หน้าต่าง Pop-up สำหรับเพิ่มโครงการ (V2 Style)    -->
-    <!-- ========================================== -->
-    <div id="projectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
-        <div class="bg-white rounded-lg w-full max-w-5xl p-6 shadow-xl my-8">
+    <!-- ============================================ -->
+    <!-- 1. หน้าต่าง Pop-up สำหรับเพิ่ม/แก้ไขโครงการ (V2 Style) -->
+    <!-- ============================================ -->
+    <div id="projectModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <!-- 📌 จุดที่แก้ไขแก้ปัญหาล้นจอ: เพิ่ม max-h-[90vh] overflow-y-auto ตรงนี้ครับ -->
+        <div class="bg-white rounded-lg w-full max-w-5xl p-6 shadow-xl max-h-[90vh] overflow-y-auto">
             <h3 class="text-xl font-bold mb-4 text-purple-800 flex items-center gap-2">
                 <span class="text-2xl">+</span> เพิ่มโครงการใหม่
             </h3>
+			
             <form id="projectForm">
                 <!-- แถวที่ 1 -->
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
@@ -179,7 +181,9 @@
             </form>
         </div>
     </div>
-                <!-- หน้าต่าง Pop-up (Modal) สำหรับดูรายละเอียดโครงการและรูปภาพ -->
+                <!-- =================================================== -->
+                <!-- หน้าต่าง Pop-up สำหรับดูรายละเอียดโครงการและรูปภาพ (View Modal)  -->
+				<!-- =================================================== -->
     <div id="viewModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 overflow-y-auto">
         <div class="bg-white rounded-xl w-full max-w-5xl p-6 shadow-2xl my-8 max-h-[90vh] overflow-y-auto">
             <div class="flex justify-between items-center mb-4 border-b pb-3">
@@ -188,13 +192,16 @@
                 </h3>
                 <button type="button" id="closeViewModalBtn" class="text-gray-400 hover:text-red-500 font-bold text-2xl px-2">✕</button>
             </div>
-            
+            <!-- พื้นที่แสดงข้อมูลที่จะถูกเติมด้วย JavaScript -->
             <div id="viewContent">
                 <p class="text-center text-gray-500 py-10">⏳ กำลังโหลดข้อมูล...</p>
             </div>
         </div>
     </div>>
 
+<!-- ========================================== -->
+<!-- ส่วนของ JavaScript -->
+<!-- ========================================== -->
 <script>
         // 1. ตั้งค่าการเชื่อมต่อ (ใช้ Key เดิมของคุณ)
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
@@ -301,7 +308,7 @@
                     tableHTML += `
                         <tr class="hover:bg-gray-50 transition border-b">
                             <!-- คอลัมน์ 1: เลขที่สัญญา -->      
-							<td class="py-3 px-4 text-gray-600">${project.contract_number || '-'}</td>
+                            <td class="py-3 px-4 text-gray-600">${project.contract_number || '-'}</td>
 							<!-- คอลัมน์ 2: ชื่อโครงการ (และจุดแดงแจ้งเตือน) -->
                             <td class="py-3 px-4 text-gray-800 font-medium flex items-center">
                                 ${redDot} ${project.project_name || '-'}
@@ -342,8 +349,8 @@
         const projectForm = document.getElementById('projectForm');
         const addProjectBtn = document.getElementById('addProjectBtn');
         const closeModalBtn = document.getElementById('closeModalBtn');
-// ระบบจัดการรายชื่อคณะกรรมการ
-		const committeeContainer = document.getElementById('committeeContainer');
+        // ระบบจัดการรายชื่อคณะกรรมการ
+        const committeeContainer = document.getElementById('committeeContainer');
         const addCommitteeBtn = document.getElementById('addCommitteeBtn');
 
         // ฟังก์ชันสร้างแถวคณะกรรมการ (ปรับให้รองรับการดึงข้อมูลเก่ามาโชว์)
