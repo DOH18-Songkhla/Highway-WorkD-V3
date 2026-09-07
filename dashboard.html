@@ -287,7 +287,6 @@
             renderYearTabs(); 
             renderTable(); 
         }
-
         // 4. วาดตารางแบบ Grid
         function renderTable() {
             const container = document.getElementById('projectContainer');
@@ -295,9 +294,18 @@
             
             let displayProjects = allProjectsData;
 
+            // กรองตามปีงบประมาณ
             if (currentYearTab !== 'ทั้งหมด') {
                 displayProjects = displayProjects.filter(p => p.fiscal_year === currentYearTab);
             }
+
+            // 📌 [เพิ่มใหม่] จัดเรียงเลขที่สัญญาแบบ Natural Sort (9 แล้วไป 10)
+            displayProjects.sort((a, b) => {
+                const contractA = a.contract_number || '';
+                const contractB = b.contract_number || '';
+                // ใช้ localeCompare (numeric: true) เพื่อให้มันฉลาดพอที่จะรู้ว่า 10 มากกว่า 9
+                return contractA.localeCompare(contractB, 'th', { numeric: true, sensitivity: 'base' });
+            });
 
             if (displayProjects.length === 0) {
                 container.innerHTML = `<p class="text-gray-500 py-8">ไม่มีข้อมูลโครงการในปีงบประมาณ ${currentYearTab !== 'ทั้งหมด' ? currentYearTab : ''}</p>`;
