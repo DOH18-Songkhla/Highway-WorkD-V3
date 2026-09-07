@@ -138,7 +138,7 @@
     <!-- JavaScript ทำงานเบื้องหลัง -->
     <!-- ========================================== -->
     <script>
-        // ตั้งค่า Supabase (ใช้ Key เดิม)
+// ตั้งค่า Supabase (ใช้ Key เดิม)
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -147,6 +147,8 @@
         let chartInstance = null;
         let currentUserRole = null;
         let currentUserDeptId = null;
+        let allProjectsData = []; // เก็บข้อมูลโครงการทั้งหมดสำหรับระบบค้นหา
+        let deptMap = {}; // เก็บชื่อหน่วยงาน
 
         // 1. ตรวจสอบสถานะการเข้าสู่ระบบเมื่อเปิดเว็บ
         async function checkAuthStatus() {
@@ -154,7 +156,6 @@
             const { data: { session } } = await supabaseClient.auth.getSession();
 
             if (session) {
-                // กรณีล็อกอินแล้ว
                 const { data: profile } = await supabaseClient.from('doh_profiles_v3').select('*').eq('id', session.user.id).single();
                 if(profile) {
                     currentUserRole = profile.role;
@@ -170,7 +171,6 @@
                     `;
                 }
             } else {
-                // กรณีเป็นคนนอก หรือยังไม่ล็อกอิน
                 authArea.innerHTML = `
                     <button onclick="document.getElementById('loginModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-500 border border-blue-400 px-5 py-2 rounded-lg text-sm font-bold shadow-md transition flex items-center gap-2">
                         🔐 เข้าสู่ระบบ <span class="hidden sm:inline">(เจ้าหน้าที่)</span>
@@ -178,24 +178,21 @@
                 `;
             }
             
-            // เมื่อเช็คสิทธิ์เสร็จ ให้ดึงข้อมูลมาทำกราฟทันที
             fetchDashboardData();
         }
 
         // 2. ดึงข้อมูลโครงการและวาดกราฟ
         async function fetchDashboardData() {
             try {
-                // ดึงรายชื่อหน่วยงานทั้งหมดมาเก็บไว้ (เพื่อใช้แสดงเป็นชื่อแกน X บนกราฟ)
+                // ดึงรายชื่อหน่วยงาน
                 const { data: departments } = await supabaseClient.from('doh_departments_v3').select('*');
-                let deptMap = {};
                 if(departments) {
                     departments.forEach(d => deptMap[d.id] = d.name);
                 }
 
-                // ดึงข้อมูลโครงการ (เช็คสิทธิ์การมองเห็น)
-                let query = supabaseClient.from('doh_projects_v3').select('*');
+                // ดึงข้อมูลโครงการทั้งหมด (เก็บไว้ใช้ค้นหาด้วย)
+                let query = supabaseClient.from('doh_projects_v3').select('*').order('created_at', { ascending: false });
                 
-                // ถ้าล็อกอินเป็น admin (ไม่ใช่ super_admin) ให้กรองข้อมูลเหลือแค่ของแขวงตัวเอง
                 if (currentUserRole === 'admin' && currentUserDeptId) {
                     query = query.eq('department_id', currentUserDeptId);
                     document.getElementById('dashboardTitle').innerText = `สรุปผลการดำเนินงาน (${deptMap[currentUserDeptId] || 'หน่วยงานของคุณ'})`;
@@ -205,13 +202,14 @@
 
                 const { data: projects, error } = await query;
                 if (error) throw error;
+                
+                allProjectsData = projects || []; // บันทึกข้อมูลลงตัวแปรกลาง
 
                 // --- คำนวณสรุปการ์ด 3 กล่อง ---
                 const total = projects.length;
                 const completed = projects.filter(p => p.status === 'แล้วเสร็จ').length;
                 const ongoing = total - completed;
 
-                // วิ่งอนิเมชั่นตัวเลข (Gimmick ความสวยงาม)
                 animateValue("sumTotal", 0, total, 1000);
                 animateValue("sumCompleted", 0, completed, 1000);
                 animateValue("sumOngoing", 0, ongoing, 1000);
@@ -222,13 +220,10 @@
                 let completedData = [];
 
                 if (currentUserRole === 'admin' && currentUserDeptId) {
-                    // ถ้าเป็น Admin โชว์กราฟแค่แท่งเดียวของแขวงตัวเอง
                     chartLabels.push(deptMap[currentUserDeptId] || 'หน่วยงานของคุณ');
                     totalData.push(total);
                     completedData.push(completed);
                 } else {
-                    // ถ้าเป็น Super Admin หรือ คนนอก ให้รวมข้อมูล 7 หน่วยงาน
-                    // จัดกลุ่มตาม department_id
                     let deptCount = {};
                     projects.forEach(p => {
                         let dId = p.department_id || 'unknown';
@@ -237,16 +232,20 @@
                         if(p.status === 'แล้วเสร็จ') deptCount[dId].completed++;
                     });
 
-                    // นำข้อมูลที่จัดกลุ่มแล้วมาเรียงใส่ Array เพื่อวาดกราฟ
-                    Object.keys(deptCount).forEach(key => {
+                    // สร้างอาร์เรย์เพื่อจัดเรียงข้อมูลตาม ID แขวง
+                    const sortedDepts = Object.keys(deptCount).sort((a, b) => parseInt(a) - parseInt(b));
+                    
+                    sortedDepts.forEach(key => {
                         chartLabels.push(deptMap[key] || `รหัสหน่วยงาน ${key}`);
                         totalData.push(deptCount[key].total);
                         completedData.push(deptCount[key].completed);
                     });
                 }
 
-                // สั่งวาดกราฟ
                 renderChart(chartLabels, totalData, completedData);
+                
+                // สั่งให้วาดผลลัพธ์การค้นหาครั้งแรก (โชว์ทั้งหมด)
+                renderSearchResults(allProjectsData);
 
             } catch (error) {
                 console.error('Error fetching data:', error);
@@ -256,8 +255,6 @@
         // 3. ฟังก์ชันวาดกราฟด้วย Chart.js
         function renderChart(labels, totalData, completedData) {
             const ctx = document.getElementById('departmentChart').getContext('2d');
-            
-            // ลบกราฟเก่าทิ้งถ้ามี
             if(chartInstance) chartInstance.destroy();
 
             chartInstance = new Chart(ctx, {
@@ -268,39 +265,120 @@
                         {
                             label: 'งานที่แล้วเสร็จ',
                             data: completedData,
-                            backgroundColor: '#22c55e', // สีเขียว
+                            backgroundColor: '#22c55e', 
                             borderRadius: 6,
-                            order: 1 // ให้อยู่ด้านหน้า
+                            order: 1 
                         },
                         {
                             label: 'งานทั้งหมดในปี',
                             data: totalData,
-                            backgroundColor: '#cbd5e1', // สีเทาอ่อนเป็นพื้นหลัง
+                            backgroundColor: '#cbd5e1', 
                             borderRadius: 6,
-                            order: 2 // ให้อยู่ด้านหลัง
+                            order: 2 
                         }
                     ]
                 },
                 options: {
                     responsive: true,
                     maintainAspectRatio: false,
-                    // ทำให้กราฟซ้อนทับกันเป็นแท่งเดียว (Stacked Bar)
                     scales: {
-                        x: { stacked: true, grid: { display: false } },
-                        y: { stacked: false, beginAtZero: true } // ให้ Y ไม่ Stack เพื่อให้แท่งเริ่มจาก 0 ทั้งคู่
+                        x: { stacked: true, grid: { display: false }, ticks: { font: { size: 11 } } },
+                        y: { stacked: false, beginAtZero: true } 
                     },
                     plugins: {
                         legend: { position: 'top' },
-                        tooltip: {
-                            mode: 'index',
-                            intersect: false,
-                        }
+                        tooltip: { mode: 'index', intersect: false }
                     }
                 }
             });
         }
 
-        // 4. ฟังก์ชันล็อกอินผ่าน Pop-up
+        // ==========================================
+        // 🔴 ฟังก์ชันระบบค้นหา (Search System) 🔴
+        // ==========================================
+        
+        // เมื่อพิมพ์ข้อความในช่องค้นหา ให้กรองข้อมูลทันที
+        document.getElementById('searchInput').addEventListener('input', function(e) {
+            const keyword = e.target.value.toLowerCase().trim();
+            
+            if (keyword === '') {
+                renderSearchResults(allProjectsData); // ถ้าช่องว่าง ให้โชว์ทั้งหมด
+                return;
+            }
+            
+            const filtered = allProjectsData.filter(p => {
+                const name = (p.project_name || '').toLowerCase();
+                const contract = (p.contract_number || '').toLowerCase();
+                const route = (p.route_number || '').toLowerCase();
+                const contractor = (p.contractor || '').toLowerCase();
+                
+                return name.includes(keyword) || contract.includes(keyword) || route.includes(keyword) || contractor.includes(keyword);
+            });
+            
+            renderSearchResults(filtered);
+        });
+
+        // ฟังก์ชันวาดผลลัพธ์การค้นหาในรูปแบบ Card
+        function renderSearchResults(projects) {
+            const container = document.getElementById('searchResultsContainer');
+            
+            if (projects.length === 0) {
+                container.innerHTML = `<div class="col-span-full text-center text-gray-400 py-10"><p class="text-4xl mb-2">🔍</p><p>ไม่พบโครงการที่ตรงกับคำค้นหา</p></div>`;
+                return;
+            }
+            
+            let html = '';
+            projects.forEach(project => {
+                let statusColor = 'bg-gray-100 text-gray-800 border-gray-200'; 
+                if(project.status === 'ระหว่างก่อสร้าง') statusColor = 'bg-yellow-50 text-yellow-800 border-yellow-200';
+                if(project.status === 'รอส่งมอบงาน') statusColor = 'bg-blue-50 text-blue-800 border-blue-200';
+                if(project.status === 'รอเบิกจ่าย') statusColor = 'bg-purple-50 text-purple-800 border-purple-200';
+                if(project.status === 'ล่าช้ากว่าแผน') statusColor = 'bg-orange-50 text-orange-800 border-orange-200';
+                if(project.status === 'แล้วเสร็จ') statusColor = 'bg-green-50 text-green-800 border-green-200';
+                if(project.status === 'บอกเลิกสัญญา') statusColor = 'bg-red-50 text-red-600 border-red-200';
+
+                const progressVal = project.progress_percent || 0;
+                
+                html += `
+                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm p-4 flex flex-col justify-between text-left hover:shadow-md transition">
+                        <div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">สัญญา: ${project.contract_number || '-'}</span>
+                                <span class="px-2 py-0.5 rounded text-[10px] font-bold border ${statusColor}">
+                                    ${project.status || 'ไม่มีข้อมูล'}
+                                </span>
+                            </div>
+                            
+                            <h3 class="text-sm font-bold text-gray-800 leading-snug mb-2 line-clamp-2" title="${project.project_name || '-'}">
+                                ${project.project_name || '-'}
+                            </h3>
+                            
+                            <p class="text-xs text-gray-500 mb-1 flex items-center gap-1">
+                                👷 <span class="truncate">${project.contractor || '-'}</span>
+                            </p>
+                            <p class="text-xs text-gray-500 mb-3 flex items-center gap-1">
+                                📍 <span class="truncate">${project.route_number || '-'}</span>
+                            </p>
+                        </div>
+                        
+                        <div class="mt-2 pt-2 border-t border-gray-50">
+                            <div class="flex justify-between items-end mb-1">
+                                <span class="text-[10px] font-bold text-gray-500">ความก้าวหน้าสะสม</span>
+                                <span class="text-xs font-black text-teal-600">${progressVal}%</span>
+                            </div>
+                            <div class="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                                <div class="bg-teal-500 h-1.5 rounded-full" style="width: ${progressVal}%"></div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
+        }
+
+        // ==========================================
+
+        // ฟังก์ชันล็อกอินผ่าน Pop-up
         document.getElementById('loginForm').addEventListener('submit', async (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value;
@@ -318,12 +396,10 @@
                 errorMsg.classList.remove('hidden');
                 btn.innerHTML = 'เข้าสู่ระบบ'; btn.disabled = false;
             } else {
-                // ล็อกอินสำเร็จ โหลดหน้าใหม่เพื่อให้สถานะสลับเป็นล็อกอินแล้ว
                 window.location.reload();
             }
         });
 
-        // 5. ฟังก์ชันออกจากระบบ
         async function logout() {
             await supabaseClient.auth.signOut();
             window.location.reload();
@@ -344,8 +420,8 @@
             }, stepTime);
         }
 
-        // สั่งให้เช็คสถานะทำงานทันทีเมื่อเปิดหน้าเว็บ
         checkAuthStatus();
+    </script>
     </script>
 </body>
 </html>
