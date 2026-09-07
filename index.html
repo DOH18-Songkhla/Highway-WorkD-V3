@@ -1,99 +1,351 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>ระบบบริหารงานทางหลวงและโครงการก่อสร้าง V.3 - สำนักทางหลวงที่ 18</title>
-<link rel="icon" href="favicon.ico" type="image/x-icon">
-<link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
-    <!-- ใช้ Tailwind CSS สำหรับจัดหน้าตาให้เป็นระดับองค์กร -->
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Super Dashboard - สรุปภาพรวมเขต 18</title>
+    <link rel="icon" href="favicon.ico" type="image/x-icon">
+    <!-- นำเข้า Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- นำเข้า Supabase JS -->
+    <!-- นำเข้า Supabase -->
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <!-- นำเข้า Chart.js สำหรับทำกราฟ -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-100 flex items-center justify-center h-screen">
+<body class="bg-gray-50 min-h-screen relative font-sans">
 
-    <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
-        <div class="text-center mb-6">
-            <h2 class="text-2xl font-bold text-blue-800">Highway WorkD V.3</h2>
-            <p class="text-gray-600">สำนักทางหลวงที่ 18 สงขลา</p>
+    <!-- แถบเมนูด้านบน (Navbar) -->
+    <nav class="bg-gradient-to-r from-blue-900 to-blue-700 text-white p-4 shadow-lg sticky top-0 z-40">
+        <div class="container mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3">
+                <div class="bg-white p-1.5 rounded-lg shadow-sm">
+                    <span class="text-2xl">📊</span>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold tracking-wide">Highway WorkD</h1>
+                    <p class="text-xs text-blue-200">ระบบสรุปภาพรวมโครงการ เขตทางหลวงที่ 18</p>
+                </div>
+            </div>
+            
+            <!-- พื้นที่สำหรับปุ่มล็อกอิน / ข้อมูลผู้ใช้ -->
+            <div id="authArea" class="flex items-center gap-3">
+                <p class="text-sm text-blue-200">กำลังตรวจสอบสิทธิ์...</p>
+            </div>
+        </div>
+    </nav>
+
+    <!-- พื้นที่แสดงเนื้อหาหลัก -->
+    <div class="container mx-auto p-4 md:p-6 mt-2 pb-24">
+        
+        <!-- หัวข้อหน้า -->
+        <div class="mb-6 flex justify-between items-end">
+            <div>
+                <h2 class="text-2xl font-black text-gray-800" id="dashboardTitle">สรุปผลการดำเนินงานภาพรวม (เขต 18)</h2>
+                <p class="text-sm text-gray-500 mt-1">ข้อมูลสถานะโครงการอัปเดตล่าสุด</p>
+            </div>
         </div>
 
-        <form id="loginForm">
-            <div class="mb-4">
-                <label for="email" class="block text-gray-700 text-sm font-bold mb-2">อีเมลผู้ใช้งาน</label>
-                <input type="email" id="email" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" placeholder="admin@example.com">
+        <!-- 📌 1. การ์ดสรุปตัวเลข 3 กล่อง -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md transition">
+                <div>
+                    <p class="text-sm font-bold text-gray-500">โครงการทั้งหมด</p>
+                    <h3 class="text-4xl font-black text-blue-600 mt-1" id="sumTotal">0</h3>
+                </div>
+                <div class="w-14 h-14 bg-blue-50 rounded-full flex items-center justify-center text-3xl shadow-inner">📁</div>
             </div>
-            <div class="mb-6">
-                <label for="password" class="block text-gray-700 text-sm font-bold mb-2">รหัสผ่าน</label>
-                <input type="password" id="password" required class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline" placeholder="********">
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md transition">
+                <div>
+                    <p class="text-sm font-bold text-gray-500">โครงการที่แล้วเสร็จ</p>
+                    <h3 class="text-4xl font-black text-green-500 mt-1" id="sumCompleted">0</h3>
+                </div>
+                <div class="w-14 h-14 bg-green-50 rounded-full flex items-center justify-center text-3xl shadow-inner">✅</div>
             </div>
-            
-            <div class="flex items-center justify-between">
-                <button type="submit" id="loginBtn" class="bg-blue-600 hover:bg-blue-800 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline w-full transition duration-150">
-                    เข้าสู่ระบบ
-                </button>
+
+            <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 flex items-center justify-between hover:shadow-md transition">
+                <div>
+                    <p class="text-sm font-bold text-gray-500">อยู่ระหว่างดำเนินการ / อื่นๆ</p>
+                    <h3 class="text-4xl font-black text-orange-500 mt-1" id="sumOngoing">0</h3>
+                </div>
+                <div class="w-14 h-14 bg-orange-50 rounded-full flex items-center justify-center text-3xl shadow-inner">🚧</div>
             </div>
-            <p id="errorMessage" class="text-red-500 text-sm mt-3 text-center hidden"></p>
-        </form>
+        </div>
+
+        <!-- 📌 2. พื้นที่วาดกราฟแท่ง (Chart.js) -->
+        <div class="bg-white rounded-2xl shadow-sm border border-gray-100 p-4 md:p-6 mb-8 w-full">
+            <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                📈 สถิติโครงการแบ่งตามหน่วยงานรับผิดชอบ
+            </h3>
+            <div class="relative h-[400px] w-full">
+                <canvas id="departmentChart"></canvas>
+            </div>
+        </div>
     </div>
 
-<script>
-        // 1. ตั้งค่าการเชื่อมต่อ (เปลี่ยนชื่อเป็น supabaseClient เพื่อไม่ให้ชน)
+    <!-- 📌 3. ปุ่มลอย FAB (Floating Action Button) สำหรับค้นหา -->
+    <button onclick="document.getElementById('searchModal').classList.remove('hidden')" class="fixed bottom-6 right-6 w-14 h-14 bg-purple-600 text-white rounded-full shadow-lg hover:bg-purple-700 hover:shadow-xl transition-all duration-300 flex items-center justify-center text-2xl z-40 group">
+        🔍
+        <!-- Tooltip -->
+        <span class="absolute right-16 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">ค้นหาโครงการ</span>
+    </button>
+
+    <!-- ========================================== -->
+    <!-- หน้าต่าง Modal สำหรับ เข้าสู่ระบบ (Login) -->
+    <!-- ========================================== -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-sm p-8 shadow-2xl relative">
+            <button onclick="document.getElementById('loginModal').classList.add('hidden')" class="absolute top-4 right-4 text-gray-400 hover:text-red-500 text-xl font-bold">✕</button>
+            <div class="text-center mb-6">
+                <div class="inline-block bg-blue-100 text-blue-700 p-3 rounded-full mb-2 text-2xl">🔐</div>
+                <h3 class="text-xl font-bold text-gray-800">เข้าสู่ระบบหลังบ้าน</h3>
+                <p class="text-xs text-gray-500 mt-1">เฉพาะเจ้าหน้าที่กรมทางหลวง</p>
+            </div>
+            <form id="loginForm">
+                <div class="mb-4">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">อีเมล</label>
+                    <input type="email" id="email" required class="shadow-sm border rounded-lg w-full py-2.5 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                </div>
+                <div class="mb-6">
+                    <label class="block text-gray-700 text-sm font-bold mb-2">รหัสผ่าน</label>
+                    <input type="password" id="password" required class="shadow-sm border rounded-lg w-full py-2.5 px-3 text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50">
+                </div>
+                <button type="submit" id="loginSubmitBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-2.5 px-4 rounded-lg transition shadow-md">
+                    เข้าสู่ระบบ
+                </button>
+                <p id="loginErrorMsg" class="text-red-500 text-xs mt-3 text-center hidden"></p>
+            </form>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- หน้าต่าง Modal สำหรับ ค้นหาข้อมูล (รอทำเฟสต่อไป) -->
+    <!-- ========================================== -->
+    <div id="searchModal" class="hidden fixed inset-0 bg-black bg-opacity-60 flex justify-center items-start pt-20 z-50 p-4 backdrop-blur-sm">
+        <div class="bg-white rounded-2xl w-full max-w-3xl p-6 shadow-2xl">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-lg font-bold text-purple-800">🔍 ค้นหาข้อมูลโครงการ</h3>
+                <button onclick="document.getElementById('searchModal').classList.add('hidden')" class="text-gray-400 hover:text-red-500 text-xl font-bold">✕</button>
+            </div>
+            <input type="text" placeholder="พิมพ์ชื่อโครงการ, เลขที่สัญญา หรือสายทาง..." class="w-full border-2 border-purple-200 rounded-xl py-3 px-4 focus:outline-none focus:border-purple-500 text-lg shadow-inner">
+            <div class="mt-4 text-center text-gray-400 py-10">
+                <p>📍 ระบบค้นหาและแสดงรายละเอียดโครงการ จะพร้อมใช้งานในเฟสต่อไป</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- ========================================== -->
+    <!-- JavaScript ทำงานเบื้องหลัง -->
+    <!-- ========================================== -->
+    <script>
+        // ตั้งค่า Supabase (ใช้ Key เดิม)
         const SUPABASE_URL = 'https://xsitjazwsaprzcwnksyu.supabase.co';
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
-        
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        // 2. ดักจับการกดปุ่มเข้าสู่ระบบ
-        document.getElementById('loginForm').addEventListener('submit', async function(e) {
-            e.preventDefault();
+        // ตัวแปรเก็บข้อมูล
+        let chartInstance = null;
+        let currentUserRole = null;
+        let currentUserDeptId = null;
+
+        // 1. ตรวจสอบสถานะการเข้าสู่ระบบเมื่อเปิดเว็บ
+        async function checkAuthStatus() {
+            const authArea = document.getElementById('authArea');
+            const { data: { session } } = await supabaseClient.auth.getSession();
+
+            if (session) {
+                // กรณีล็อกอินแล้ว
+                const { data: profile } = await supabaseClient.from('doh_profiles_v3').select('*').eq('id', session.user.id).single();
+                if(profile) {
+                    currentUserRole = profile.role;
+                    currentUserDeptId = profile.department_id;
+                    
+                    authArea.innerHTML = `
+                        <div class="text-right hidden sm:block mr-2">
+                            <p class="text-sm font-bold">${profile.full_name || session.user.email}</p>
+                            <p class="text-[10px] text-blue-200">สิทธิ์: ${profile.role}</p>
+                        </div>
+                        <a href="dashboard.html" class="bg-white text-blue-800 hover:bg-blue-50 px-4 py-2 rounded-lg text-sm font-bold shadow-md transition">⚙️ ไปหน้าจัดการข้อมูล</a>
+                        <button onclick="logout()" class="bg-red-500 hover:bg-red-600 px-3 py-2 rounded-lg text-sm font-bold shadow transition ml-1">ออก</button>
+                    `;
+                }
+            } else {
+                // กรณีเป็นคนนอก หรือยังไม่ล็อกอิน
+                authArea.innerHTML = `
+                    <button onclick="document.getElementById('loginModal').classList.remove('hidden')" class="bg-blue-600 hover:bg-blue-500 border border-blue-400 px-5 py-2 rounded-lg text-sm font-bold shadow-md transition flex items-center gap-2">
+                        🔐 เข้าสู่ระบบ <span class="hidden sm:inline">(เจ้าหน้าที่)</span>
+                    </button>
+                `;
+            }
             
-            const email = document.getElementById('email').value;
-            const password = document.getElementById('password').value;
-            const loginBtn = document.getElementById('loginBtn');
-            const errorMessage = document.getElementById('errorMessage');
+            // เมื่อเช็คสิทธิ์เสร็จ ให้ดึงข้อมูลมาทำกราฟทันที
+            fetchDashboardData();
+        }
 
-            // เปลี่ยนสถานะปุ่มขณะรอโหลด
-            loginBtn.innerText = 'กำลังตรวจสอบ...';
-            loginBtn.disabled = true;
-            errorMessage.classList.add('hidden');
-
+        // 2. ดึงข้อมูลโครงการและวาดกราฟ
+        async function fetchDashboardData() {
             try {
-                // ส่งข้อมูลไปตรวจสอบกับระบบ Auth ต้องใช้ supabaseClient
-                const { data, error } = await supabaseClient.auth.signInWithPassword({
-                    email: email,
-                    password: password,
-                });
+                // ดึงรายชื่อหน่วยงานทั้งหมดมาเก็บไว้ (เพื่อใช้แสดงเป็นชื่อแกน X บนกราฟ)
+                const { data: departments } = await supabaseClient.from('doh_departments_v3').select('*');
+                let deptMap = {};
+                if(departments) {
+                    departments.forEach(d => deptMap[d.id] = d.name);
+                }
 
+                // ดึงข้อมูลโครงการ (เช็คสิทธิ์การมองเห็น)
+                let query = supabaseClient.from('doh_projects_v3').select('*');
+                
+                // ถ้าล็อกอินเป็น admin (ไม่ใช่ super_admin) ให้กรองข้อมูลเหลือแค่ของแขวงตัวเอง
+                if (currentUserRole === 'admin' && currentUserDeptId) {
+                    query = query.eq('department_id', currentUserDeptId);
+                    document.getElementById('dashboardTitle').innerText = `สรุปผลการดำเนินงาน (${deptMap[currentUserDeptId] || 'หน่วยงานของคุณ'})`;
+                } else {
+                    document.getElementById('dashboardTitle').innerText = `สรุปผลการดำเนินงานภาพรวม (เขต 18)`;
+                }
+
+                const { data: projects, error } = await query;
                 if (error) throw error;
 
-                // 3. หากล็อกอินสำเร็จ ให้ดึงสิทธิ์ (Role) จากตาราง doh_profiles_v3 ต้องใช้ supabaseClient
-                const userId = data.user.id;
-                const { data: profileData, error: profileError } = await supabaseClient
-                    .from('doh_profiles_v3')
-                    .select('role, department_id')
-                    .eq('id', userId)
-                    .single();
+                // --- คำนวณสรุปการ์ด 3 กล่อง ---
+                const total = projects.length;
+                const completed = projects.filter(p => p.status === 'แล้วเสร็จ').length;
+                const ongoing = total - completed;
 
-                if (profileError) throw profileError;
+                // วิ่งอนิเมชั่นตัวเลข (Gimmick ความสวยงาม)
+                animateValue("sumTotal", 0, total, 1000);
+                animateValue("sumCompleted", 0, completed, 1000);
+                animateValue("sumOngoing", 0, ongoing, 1000);
 
-                // แสดงผลลัพธ์ (สเตปต่อไปเราจะเปลี่ยนเป็นการเด้งไปหน้า Dashboard ของแต่ละสิทธิ์)
-                // บันทึกสิทธิ์และเปลี่ยนหน้าไป Dashboard ทันที (ให้ Dashboard เป็นคนเด้ง Alert)
-                localStorage.setItem('loginSuccessRole', profileData.role);
-                window.location.href = 'dashboard.html';
+                // --- เตรียมข้อมูลทำกราฟ ---
+                let chartLabels = [];
+                let totalData = [];
+                let completedData = [];
 
-            } catch (err) {
-                // ถ้าคุณกด F12 ดูใน Console จะเห็น Error ที่แท้จริงตรงนี้ครับ
-                console.error("ระบบเจอ Error ภายใน:", err); 
-                errorMessage.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง โปรดลองอีกครั้ง';
-                errorMessage.classList.remove('hidden');
-            } finally {
-                // คืนสถานะปุ่มกลับมา
-                loginBtn.innerText = 'เข้าสู่ระบบ';
-                loginBtn.disabled = false;
+                if (currentUserRole === 'admin' && currentUserDeptId) {
+                    // ถ้าเป็น Admin โชว์กราฟแค่แท่งเดียวของแขวงตัวเอง
+                    chartLabels.push(deptMap[currentUserDeptId] || 'หน่วยงานของคุณ');
+                    totalData.push(total);
+                    completedData.push(completed);
+                } else {
+                    // ถ้าเป็น Super Admin หรือ คนนอก ให้รวมข้อมูล 7 หน่วยงาน
+                    // จัดกลุ่มตาม department_id
+                    let deptCount = {};
+                    projects.forEach(p => {
+                        let dId = p.department_id || 'unknown';
+                        if(!deptCount[dId]) deptCount[dId] = { total: 0, completed: 0 };
+                        deptCount[dId].total++;
+                        if(p.status === 'แล้วเสร็จ') deptCount[dId].completed++;
+                    });
+
+                    // นำข้อมูลที่จัดกลุ่มแล้วมาเรียงใส่ Array เพื่อวาดกราฟ
+                    Object.keys(deptCount).forEach(key => {
+                        chartLabels.push(deptMap[key] || `รหัสหน่วยงาน ${key}`);
+                        totalData.push(deptCount[key].total);
+                        completedData.push(deptCount[key].completed);
+                    });
+                }
+
+                // สั่งวาดกราฟ
+                renderChart(chartLabels, totalData, completedData);
+
+            } catch (error) {
+                console.error('Error fetching data:', error);
+            }
+        }
+
+        // 3. ฟังก์ชันวาดกราฟด้วย Chart.js
+        function renderChart(labels, totalData, completedData) {
+            const ctx = document.getElementById('departmentChart').getContext('2d');
+            
+            // ลบกราฟเก่าทิ้งถ้ามี
+            if(chartInstance) chartInstance.destroy();
+
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'งานที่แล้วเสร็จ',
+                            data: completedData,
+                            backgroundColor: '#22c55e', // สีเขียว
+                            borderRadius: 6,
+                            order: 1 // ให้อยู่ด้านหน้า
+                        },
+                        {
+                            label: 'งานทั้งหมดในปี',
+                            data: totalData,
+                            backgroundColor: '#cbd5e1', // สีเทาอ่อนเป็นพื้นหลัง
+                            borderRadius: 6,
+                            order: 2 // ให้อยู่ด้านหลัง
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    // ทำให้กราฟซ้อนทับกันเป็นแท่งเดียว (Stacked Bar)
+                    scales: {
+                        x: { stacked: true, grid: { display: false } },
+                        y: { stacked: false, beginAtZero: true } // ให้ Y ไม่ Stack เพื่อให้แท่งเริ่มจาก 0 ทั้งคู่
+                    },
+                    plugins: {
+                        legend: { position: 'top' },
+                        tooltip: {
+                            mode: 'index',
+                            intersect: false,
+                        }
+                    }
+                }
+            });
+        }
+
+        // 4. ฟังก์ชันล็อกอินผ่าน Pop-up
+        document.getElementById('loginForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const btn = document.getElementById('loginSubmitBtn');
+            const errorMsg = document.getElementById('loginErrorMsg');
+            
+            btn.innerHTML = 'กำลังเข้าสู่ระบบ...'; btn.disabled = true;
+            errorMsg.classList.add('hidden');
+
+            const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+            
+            if (error) {
+                errorMsg.innerText = 'อีเมลหรือรหัสผ่านไม่ถูกต้อง';
+                errorMsg.classList.remove('hidden');
+                btn.innerHTML = 'เข้าสู่ระบบ'; btn.disabled = false;
+            } else {
+                // ล็อกอินสำเร็จ โหลดหน้าใหม่เพื่อให้สถานะสลับเป็นล็อกอินแล้ว
+                window.location.reload();
             }
         });
+
+        // 5. ฟังก์ชันออกจากระบบ
+        async function logout() {
+            await supabaseClient.auth.signOut();
+            window.location.reload();
+        }
+
+        // Gimmick อนิเมชั่นตัวเลขวิ่ง
+        function animateValue(id, start, end, duration) {
+            if (start === end) return document.getElementById(id).innerHTML = end;
+            let range = end - start;
+            let current = start;
+            let increment = end > start ? 1 : -1;
+            let stepTime = Math.abs(Math.floor(duration / range));
+            let obj = document.getElementById(id);
+            let timer = setInterval(function() {
+                current += increment;
+                obj.innerHTML = current;
+                if (current == end) clearInterval(timer);
+            }, stepTime);
+        }
+
+        // สั่งให้เช็คสถานะทำงานทันทีเมื่อเปิดหน้าเว็บ
+        checkAuthStatus();
     </script>
 </body>
 </html>
