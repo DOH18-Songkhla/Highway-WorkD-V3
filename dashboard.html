@@ -222,11 +222,16 @@
                         <div class="font-bold text-white">${profileData.full_name || user.email}</div>
                         <div class="text-xs text-blue-200">${profileData.position_name || '-'} (สิทธิ์: ${profileData.role})</div>
                     </div>`;                
+            // 1. สิทธิ์ที่ทั้ง Super Admin และ Admin ทำได้ (ปุ่มเพิ่มโครงการ)
                 if (profileData.role === 'super_admin' || profileData.role === 'admin') {
                     document.getElementById('addProjectBtn').classList.remove('hidden');
                 }
-                fetchProjects();
-            }
+
+                // 2. สิทธิ์เฉพาะ Super Admin เท่านั้น (ปุ่มนำเข้า / ส่งออก JSON)
+                if (profileData.role === 'super_admin') {
+                    document.getElementById('importJsonBtn').classList.remove('hidden');
+                    document.getElementById('exportJsonBtn').classList.remove('hidden');
+                }
         }
 
         async function fetchProjects() {
@@ -603,10 +608,9 @@
 
         // --- 1. ฟังก์ชันส่งออก JSON ---
         function exportToJson() {
+            if (userRole !== 'super_admin') return alert('⛔ คุณไม่มีสิทธิ์ใช้งานฟังก์ชันนี้'); // ดักสิทธิ์
+            
             if (!allProjectsData || allProjectsData.length === 0) {
-                alert('ไม่มีข้อมูลสำหรับส่งออก');
-                return;
-            }
             
             // แปลงข้อมูลเป็น JSON String (ใส่ null, 2 เพื่อให้โค้ดเว้นบรรทัดอ่านง่าย)
             const dataStr = JSON.stringify(allProjectsData, null, 2);
@@ -625,8 +629,14 @@
             URL.revokeObjectURL(url);
         }
 
-        // --- 2. ฟังก์ชันนำเข้า JSON ---
+        // --- 2. ฟังก์ชันนำเข้า JSON (รองรับไฟล์ V.2 และ V.3) ---
         document.getElementById('importJsonFile').addEventListener('change', function(e) {
+            // เช็คสิทธิ์ (ให้เฉพาะ super_admin นำเข้าได้)
+            if (userRole !== 'super_admin') {
+                alert('⛔ คุณไม่มีสิทธิ์ใช้งานฟังก์ชันนี้');
+                e.target.value = ''; return;
+            }
+            
             const file = e.target.files[0];
             if (!file) return;
 
@@ -648,23 +658,56 @@
                     importBtn.innerHTML = '⏳ กำลังนำเข้า...';
                     importBtn.disabled = true;
 
-                    // ปรับแต่งข้อมูลก่อน Insert 
-                    // (ลบ id และ created_at ของเก่าทิ้ง เพื่อให้ Supabase สร้างขึ้นมาใหม่ ป้องกัน Error ข้อมูลซ้ำ)
+                    // ปรับแต่งและ Map ข้อมูลก่อน Insert
                     const dataToInsert = jsonData.map(item => {
-                        const { id, created_at, ...rest } = item;
+                        // แยก id, created_at, updated_at และ cloud_id ออกเพื่อไม่ให้นำเข้าฐานข้อมูลใหม่
+                        const { id, created_at, updated_at, cloud_id, ...rest } = item;
                         
-                        // ถ้าเป็น Admin แขวงนำเข้าเอง บังคับให้เป็นข้อมูลของแขวงตัวเองเสมอ
-                        if (userRole !== 'super_admin') {
-                            rest.department_id = userDepartmentId;
-                        }
-                        return rest;
+                        // ตัวแปรสำหรับเก็บข้อมูลที่แปลงแล้ว (พร้อมใส่ V.3)
+                        let mappedItem = {};
+
+                        // 1. จัดการแปลงชื่อฟิลด์จาก V.2 -> V.3
+                        mappedItem.project_name = rest.name || rest.project_name || '-';
+                        mappedItem.fiscal_year = rest.year || rest.fiscal_year || '';
+                        mappedItem.funding_source = rest.source || rest.funding_source || '';
+                        mappedItem.contract_number = rest.contract_no || rest.contract_number || '';
+                        mappedItem.route_number = rest.route_no || rest.route_number || '';
+                        mappedItem.progress_percent = parseFloat(rest.progress || rest.progress_percent || 0);
+                        mappedItem.total_budget = parseFloat(rest.budget || rest.total_budget || 0);
+                        mappedItem.paid_amount = parseFloat(rest.disbursed || rest.paid_amount || 0);
+                        mappedItem.notes = rest.detail || rest.notes || '';
+                        
+                        // ฟิลด์ที่มีชื่อตรงกันอยู่แล้ว
+                        mappedItem.contractor = rest.contractor || '';
+                        mappedItem.section_name = rest.section_name || '';
+                        mappedItem.km_range = rest.km_range || '';
+                        mappedItem.committee_members = rest.persons || rest.committee_members || [];
+                        
+                        // 2. แปลงสถานะ (Status) ของ V.2 เป็นข้อความภาษาไทยของ V.3
+                        let thaiStatus = 'รอดำเนินการ';
+                        const oldStatus = (rest.status || '').toLowerCase();
+                        if (oldStatus === 'progress' || oldStatus === 'ระหว่างก่อสร้าง') thaiStatus = 'ระหว่างก่อสร้าง';
+                        else if (oldStatus === 'waitpay' || oldStatus === 'รอเบิกจ่าย') thaiStatus = 'รอเบิกจ่าย';
+                        else if (oldStatus === 'terminated' || oldStatus === 'บอกเลิกสัญญา') thaiStatus = 'บอกเลิกสัญญา';
+                        else if (oldStatus === 'completed' || oldStatus === 'แล้วเสร็จ') thaiStatus = 'แล้วเสร็จ';
+                        mappedItem.status = thaiStatus;
+
+                        // 3. จัดการแผนงาน/ผลงาน (ถ้าไฟล์เก่าไม่มีให้เป็น 0)
+                        mappedItem.plan_percent = parseFloat(rest.plan_percent || 0);
+                        mappedItem.actual_percent = parseFloat(rest.actual_percent || 0);
+
+                        // 4. บังคับใส่แผนก (ถ้าไม่ใช่ super admin จะถูกบังคับเป็นแขวงตัวเอง)
+                        // แต่โค้ดนี้ให้เฉพาะ super_admin ใช้ ดังนั้นจะพยายามหา ID จากข้อมูลเดิม ถ้าไม่มีจะตั้งเป็น 1 (ทดสอบ)
+                        mappedItem.department_id = rest.department_id || 1; 
+
+                        return mappedItem;
                     });
 
                     // บันทึกลง Supabase แบบรวดเดียว (Bulk Insert)
                     const { error } = await supabaseClient.from('doh_projects_v3').insert(dataToInsert);
                     if (error) throw error;
 
-                    alert('✅ นำเข้าข้อมูลสำเร็จ!');
+                    alert('✅ นำเข้าข้อมูลสำเร็จ! (แปลงรูปแบบไฟล์เรียบร้อย)');
                     fetchProjects(); // โหลดตารางใหม่
                 } catch (err) {
                     alert('❌ เกิดข้อผิดพลาดในการนำเข้า: ' + err.message);
