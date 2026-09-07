@@ -3,62 +3,71 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>เข้าสู่ระบบ - Highway WorkD V.3</title>
+    <title>หน้าแรก - Highway WorkD V.3</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-    <!-- โหลดไลบรารี Chart.js สำหรับวาดกราฟ -->
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+<body class="bg-gray-50 flex flex-col min-h-screen">
 
-    <!-- 1. โซนสำหรับคนยังไม่ล็อกอิน (ฟอร์มเข้าสู่ระบบ) -->
-    <div id="loginSection" class="w-full max-w-md bg-white p-8 rounded-xl shadow-lg border border-gray-100 transition-all">
-        <div class="text-center mb-6">
-            <h1 class="text-3xl font-black text-blue-800 mb-2">Highway WorkD</h1>
-            <p class="text-gray-500 font-bold text-sm bg-blue-50 py-1 px-3 rounded-full inline-block">เวอร์ชัน 3.0 (ระบบเขต 18)</p>
+    <!-- แถบเมนูด้านบน (สาธารณะ) -->
+    <nav class="bg-blue-800 text-white p-4 shadow-md flex justify-between items-center">
+        <div>
+            <h1 class="text-xl font-bold">Highway WorkD V.3</h1>
+            <p class="text-xs text-blue-200">ระบบติดตามความก้าวหน้าโครงการ (ภาคประชาชน)</p>
         </div>
-
-        <form id="loginForm" class="space-y-4">
-            <div>
-                <label class="block text-gray-700 text-sm font-bold mb-1">อีเมลผู้ใช้งาน</label>
-                <input type="email" id="email" required placeholder="example@doh.go.th" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-            <div>
-                <label class="block text-gray-700 text-sm font-bold mb-1">รหัสผ่าน</label>
-                <input type="password" id="password" required placeholder="••••••••" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
-            </div>
-            <button type="submit" id="loginBtn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg shadow-md transition duration-200 mt-4">
-                เข้าสู่ระบบ
+        <div id="authContainer">
+            <!-- ปุ่มล็อกอินเจ้าหน้าที่ (ซ่อน/แสดง ตามสถานะ) -->
+            <button id="openLoginBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold shadow border border-blue-500 transition">
+                🔒 สำหรับเจ้าหน้าที่
             </button>
-        </form>
+            <a href="dashboard.html" id="goToDashboardBtn" class="hidden bg-teal-500 hover:bg-teal-600 px-4 py-2 rounded text-sm font-bold shadow transition">
+                ⚙️ จัดการข้อมูล (หลังบ้าน)
+            </a>
+        </div>
+    </nav>
+
+    <!-- พื้นที่แสดงกราฟสำหรับประชาชน -->
+    <div class="flex-1 p-4 md:p-8 flex flex-col items-center">
+        <div class="w-full max-w-6xl bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col h-[75vh]">
+            <div class="mb-4 text-center md:text-left">
+                <h2 class="text-2xl font-black text-blue-800">ภาพรวมความก้าวหน้าโครงการ</h2>
+                <p class="text-gray-500 text-sm">อัปเดตข้อมูลล่าสุดจากแขวงทางหลวง</p>
+            </div>
+            
+            <div class="flex-1 w-full relative bg-gray-50 rounded-lg p-4 border border-gray-100">
+                <canvas id="publicChart"></canvas>
+                <div id="loadingText" class="absolute inset-0 flex items-center justify-center text-blue-500 font-bold">
+                    ⏳ กำลังโหลดข้อมูล...
+                </div>
+                <div id="noDataText" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 font-bold">
+                    ไม่มีข้อมูลโครงการในระบบ
+                </div>
+            </div>
+        </div>
     </div>
 
-    <!-- 2. โซนสำหรับคนล็อกอินแล้ว (โชว์กราฟแขวงตัวเอง) -->
-    <div id="dashboardSection" class="hidden w-full max-w-5xl bg-white p-6 md:p-8 rounded-xl shadow-lg border border-gray-100 transition-all flex flex-col h-[90vh]">
-        
-        <!-- Header ของหน้ากราฟ -->
-        <div class="flex flex-col md:flex-row justify-between items-center mb-6 gap-4 border-b pb-4">
-            <div>
-                <h1 class="text-2xl font-black text-blue-800">ภาพรวมความก้าวหน้าโครงการ</h1>
-                <p id="welcomeText" class="text-gray-500 text-sm mt-1">กำลังโหลดข้อมูลแขวง...</p>
+    <!-- หน้าต่าง Pop-up สำหรับเข้าสู่ระบบ (ซ่อนไว้เป็นค่าเริ่มต้น) -->
+    <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md relative animate-fade-in-up">
+            <button id="closeLoginBtn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-xl">✕</button>
+            <div class="text-center mb-6">
+                <h2 class="text-2xl font-black text-blue-800">เข้าสู่ระบบเจ้าหน้าที่</h2>
+                <p class="text-gray-500 text-sm mt-1">Highway WorkD V.3</p>
             </div>
-            <div class="flex gap-2">
-                <!-- ปุ่มเข้าหลังบ้านไปหน้า dashboard.html -->
-                <a href="dashboard.html" class="bg-teal-600 hover:bg-teal-700 text-white px-5 py-2 rounded-lg text-sm font-bold shadow transition flex items-center gap-2">
-                    ⚙️ จัดการข้อมูล (หลังบ้าน)
-                </a>
-                <button id="logoutBtn" class="bg-red-50 hover:bg-red-100 text-red-600 px-4 py-2 rounded-lg text-sm font-bold transition">
-                    ออกจากระบบ
+            <form id="loginForm" class="space-y-4">
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">อีเมลผู้ใช้งาน</label>
+                    <input type="email" id="email" required placeholder="example@doh.go.th" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-gray-700 text-sm font-bold mb-1">รหัสผ่าน</label>
+                    <input type="password" id="password" required placeholder="••••••••" class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:outline-none">
+                </div>
+                <button type="submit" id="loginBtn" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold py-2.5 rounded-lg shadow mt-4 transition">
+                    เข้าสู่ระบบ
                 </button>
-            </div>
-        </div>
-
-        <!-- พื้นที่แสดงกราฟแท่ง -->
-        <div class="flex-1 w-full bg-gray-50 rounded-lg border border-gray-100 p-4 relative">
-            <canvas id="progressChart"></canvas>
-            <div id="noDataText" class="hidden absolute inset-0 flex items-center justify-center text-gray-400 font-bold">
-                ไม่มีข้อมูลโครงการในระบบ
-            </div>
+            </form>
         </div>
     </div>
 
@@ -70,38 +79,27 @@
         const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InhzaXRqYXp3c2Fwcnpjd25rc3l1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODY5NTc1NjMsImV4cCI6MjEwMjUzMzU2M30.XenCi59dbIR1aS0udfCOdu6nxJt6eWzTvoRDsLkZ2A8';
         const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-        const loginSection = document.getElementById('loginSection');
-        const dashboardSection = document.getElementById('dashboardSection');
-        const welcomeText = document.getElementById('welcomeText');
+        const loginModal = document.getElementById('loginModal');
+        const openLoginBtn = document.getElementById('openLoginBtn');
+        const closeLoginBtn = document.getElementById('closeLoginBtn');
+        const goToDashboardBtn = document.getElementById('goToDashboardBtn');
         const loginForm = document.getElementById('loginForm');
         let chartInstance = null;
 
-        // 1. เช็คว่าล็อกอินอยู่หรือเปล่า
+        // 1. จัดการการเปิด-ปิดหน้าต่างล็อกอิน
+        openLoginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
+        closeLoginBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
+
+        // 2. เช็คว่าล็อกอินอยู่แล้วหรือเปล่า? (เพื่อเปลี่ยนปุ่มด้านบนขวา)
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
-            
             if (session) {
-                // ถ้ามี Session ให้ซ่อนฟอร์มล็อกอิน โชว์หน้ากราฟ
-                loginSection.classList.add('hidden');
-                dashboardSection.classList.remove('hidden');
-                
-                // ดึงข้อมูลโปรไฟล์เพื่อหารหัสแขวง
-                const user = session.user;
-                const { data: profile } = await supabaseClient.from('doh_profiles_v3').select('*').eq('id', user.id).single();
-                
-                if (profile) {
-                    welcomeText.innerHTML = `ยินดีต้อนรับคุณ <b>${profile.full_name}</b> (${profile.position_name})`;
-                    // โหลดข้อมูลกราฟของแขวงนี้
-                    loadChartData(profile.department_id, profile.role);
-                }
-            } else {
-                // ถ้าไม่มี Session ให้โชว์ฟอร์มล็อกอินตามปกติ
-                loginSection.classList.remove('hidden');
-                dashboardSection.classList.add('hidden');
+                openLoginBtn.classList.add('hidden');
+                goToDashboardBtn.classList.remove('hidden'); // ถ้าล็อกอินแล้ว โชว์ปุ่มเข้าหลังบ้าน
             }
         }
 
-        // 2. ระบบเข้าสู่ระบบ
+        // 3. ระบบเข้าสู่ระบบ
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -116,42 +114,37 @@
                 alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
                 btn.innerHTML = 'เข้าสู่ระบบ'; btn.disabled = false;
             } else {
-                // ล็อกอินผ่าน ให้เช็ค Session เพื่อสลับหน้า
-                checkSession();
+                // ถ้าล็อกอินสำเร็จ ให้เด้งไปหน้า dashboard ทันที
+                window.location.href = 'dashboard.html';
             }
         });
 
-        // 3. ระบบโหลดและวาดกราฟแท่ง
-        async function loadChartData(deptId, role) {
+        // 4. วาดกราฟสำหรับประชาชน (ดึงข้อมูลทั้งหมดโดยไม่สนแผนก)
+        async function loadPublicChart() {
+            document.getElementById('loadingText').classList.remove('hidden');
             try {
-                // สร้างเงื่อนไข: ถ้าเป็น Admin แขวง ให้ดึงเฉพาะงานตัวเอง, ถ้า Super Admin ดึงทั้งหมด
-                let query = supabaseClient.from('doh_projects_v3').select('contract_number, progress_percent');
-                if (role !== 'super_admin') {
-                    query = query.eq('department_id', deptId);
-                }
+                // ดึงข้อมูลทั้งหมดที่สถานะไม่ใช่ 'รอดำเนินการ' (จะได้เห็นแต่งานที่เดินหน้าแล้ว)
+                const { data: projects, error } = await supabaseClient
+                    .from('doh_projects_v3')
+                    .select('contract_number, project_name, progress_percent');
 
-                const { data: projects, error } = await query;
+                document.getElementById('loadingText').classList.add('hidden');
+
                 if (error) throw error;
-
                 if (!projects || projects.length === 0) {
                     document.getElementById('noDataText').classList.remove('hidden');
                     return;
                 }
 
-                // เรียงลำดับกราฟจากน้อยไปมากตามเลขสัญญา (Natural Sort แบบเดียวกับตาราง)
+                // เรียงเลขสัญญาจากน้อยไปมาก
                 projects.sort((a, b) => (a.contract_number || '').localeCompare(b.contract_number || '', 'th', { numeric: true }));
 
-                // เตรียมข้อมูล แกน X (ชื่อสัญญา) และ แกน Y (% ความก้าวหน้า)
                 const labels = projects.map(p => p.contract_number || 'ไม่ระบุ');
                 const dataValues = projects.map(p => p.progress_percent || 0);
+                // เก็บชื่อโครงการไว้แสดงตอนเอาเมาส์ชี้
+                const projectNames = projects.map(p => p.project_name || '-');
 
-                // ถ้าเคยวาดกราฟไว้แล้ว ให้ทำลายอันเก่าทิ้งก่อน (ป้องกันกราฟซ้อนกัน)
-                if (chartInstance) {
-                    chartInstance.destroy();
-                }
-
-                // สั่งวาดกราฟด้วย Chart.js
-                const ctx = document.getElementById('progressChart').getContext('2d');
+                const ctx = document.getElementById('publicChart').getContext('2d');
                 chartInstance = new Chart(ctx, {
                     type: 'bar',
                     data: {
@@ -159,7 +152,7 @@
                         datasets: [{
                             label: 'ความก้าวหน้าสะสม (%)',
                             data: dataValues,
-                            backgroundColor: 'rgba(13, 148, 136, 0.7)', // สี Teal ของ Tailwind
+                            backgroundColor: 'rgba(13, 148, 136, 0.7)', 
                             borderColor: 'rgba(13, 148, 136, 1)',
                             borderWidth: 1,
                             borderRadius: 4
@@ -167,36 +160,37 @@
                     },
                     options: {
                         responsive: true,
-                        maintainAspectRatio: false, // ปล่อยให้กราฟยืดเต็มพื้นที่แนวตั้ง
+                        maintainAspectRatio: false,
                         scales: {
-                            y: {
-                                beginAtZero: true,
-                                max: 100, // กำหนดแกน Y สูงสุดที่ 100%
-                                title: { display: true, text: 'ร้อยละ (%)' }
-                            },
-                            x: {
-                                title: { display: true, text: 'เลขที่สัญญา' }
-                            }
+                            y: { beginAtZero: true, max: 100, title: { display: true, text: 'ร้อยละ (%)' } },
+                            x: { title: { display: true, text: 'เลขที่สัญญา' } }
                         },
                         plugins: {
-                            legend: { display: false } // ซ่อนป้ายกำกับด้านบนให้ดูสะอาดตา
+                            legend: { display: false },
+                            tooltip: {
+                                callbacks: {
+                                    // เปลี่ยนข้อความใน Tooltip ให้แสดงชื่อโครงการด้วย
+                                    title: function(context) {
+                                        return 'สัญญา: ' + context[0].label;
+                                    },
+                                    afterTitle: function(context) {
+                                        return projectNames[context[0].dataIndex]; // โชว์ชื่อโครงการ
+                                    }
+                                }
+                            }
                         }
                     }
                 });
 
             } catch (err) {
-                console.error("Chart Error: ", err);
+                document.getElementById('loadingText').innerHTML = '❌ เกิดข้อผิดพลาดในการดึงข้อมูล';
+                console.error(err);
             }
         }
 
-        // 4. ระบบออกจากระบบ
-        document.getElementById('logoutBtn').addEventListener('click', async () => {
-            await supabaseClient.auth.signOut();
-            window.location.reload(); // รีเฟรชหน้าเพื่อกลับไปโชว์ฟอร์มล็อกอิน
-        });
-
-        // เริ่มทำงานเมื่อเปิดหน้าเว็บ
+        // เริ่มทำงาน
         checkSession();
+        loadPublicChart();
     </script>
 </body>
 </html>
