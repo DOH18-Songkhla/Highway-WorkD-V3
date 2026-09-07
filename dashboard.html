@@ -27,11 +27,26 @@
     <!-- พื้นที่แสดงเนื้อหาหลัก -->
     <div class="container mx-auto p-6 mt-4">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex justify-between items-center mb-4">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                 <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
-                <button id="addProjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded shadow hidden">
-                    + เพิ่มโครงการใหม่
-                </button>
+                
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- ปุ่ม นำเข้า JSON (ซ่อน input file ไว้ แล้วใช้ปุ่มกดเรียก) -->
+                    <input type="file" id="importJsonFile" accept=".json" class="hidden">
+                    <button id="importJsonBtn" onclick="document.getElementById('importJsonFile').click()" class="bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-1 text-sm hidden">
+                        📥 นำเข้า JSON
+                    </button>
+
+                    <!-- ปุ่ม ส่งออก JSON -->
+                    <button id="exportJsonBtn" onclick="exportToJson()" class="bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-1 text-sm hidden">
+                        📤 ส่งออก JSON
+                    </button>
+
+                    <!-- ปุ่ม เพิ่มโครงการใหม่ (ปุ่มหลัก) -->
+                    <button id="addProjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-1 text-sm hidden">
+                        <span class="text-lg leading-none">+</span> เพิ่มโครงการใหม่
+                    </button>
+                </div>
             </div>
 
             <!-- 📌 พื้นที่สำหรับ แท็บปีงบประมาณ พ.ศ. -->
@@ -581,6 +596,87 @@
                 alert('🗑️ ลบโครงการเรียบร้อยแล้ว'); fetchProjects(); 
             } catch (err) { alert('เกิดข้อผิดพลาด: ' + err.message); }
         }
+
+// ==========================================
+        // 📥 ฟังก์ชัน นำเข้า / 📤 ส่งออก JSON
+        // ==========================================
+
+        // --- 1. ฟังก์ชันส่งออก JSON ---
+        function exportToJson() {
+            if (!allProjectsData || allProjectsData.length === 0) {
+                alert('ไม่มีข้อมูลสำหรับส่งออก');
+                return;
+            }
+            
+            // แปลงข้อมูลเป็น JSON String (ใส่ null, 2 เพื่อให้โค้ดเว้นบรรทัดอ่านง่าย)
+            const dataStr = JSON.stringify(allProjectsData, null, 2);
+            const blob = new Blob([dataStr], { type: "application/json" });
+            const url = URL.createObjectURL(blob);
+            
+            // สร้างลิงก์จำลองแล้วสั่งคลิกเพื่อดาวน์โหลดไฟล์
+            const a = document.createElement('a');
+            a.href = url;
+            // ตั้งชื่อไฟล์พร้อมวันที่
+            const dateStr = new Date().toISOString().split('T')[0];
+            a.download = `Highway_WorkD_Backup_${dateStr}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- 2. ฟังก์ชันนำเข้า JSON ---
+        document.getElementById('importJsonFile').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async function(event) {
+                try {
+                    const jsonData = JSON.parse(event.target.result);
+                    
+                    if (!Array.isArray(jsonData)) {
+                        alert('❌ รูปแบบไฟล์ไม่ถูกต้อง (ต้องเป็น Array ของโครงการ)');
+                        e.target.value = ''; return;
+                    }
+
+                    if (!confirm(`⚠️ ยืนยันการนำเข้าข้อมูลจำนวน ${jsonData.length} รายการ?\n\n(ระบบจะเพิ่มเป็นโครงการใหม่ทั้งหมด)`)) {
+                        e.target.value = ''; return;
+                    }
+
+                    const importBtn = document.getElementById('importJsonBtn');
+                    importBtn.innerHTML = '⏳ กำลังนำเข้า...';
+                    importBtn.disabled = true;
+
+                    // ปรับแต่งข้อมูลก่อน Insert 
+                    // (ลบ id และ created_at ของเก่าทิ้ง เพื่อให้ Supabase สร้างขึ้นมาใหม่ ป้องกัน Error ข้อมูลซ้ำ)
+                    const dataToInsert = jsonData.map(item => {
+                        const { id, created_at, ...rest } = item;
+                        
+                        // ถ้าเป็น Admin แขวงนำเข้าเอง บังคับให้เป็นข้อมูลของแขวงตัวเองเสมอ
+                        if (userRole !== 'super_admin') {
+                            rest.department_id = userDepartmentId;
+                        }
+                        return rest;
+                    });
+
+                    // บันทึกลง Supabase แบบรวดเดียว (Bulk Insert)
+                    const { error } = await supabaseClient.from('doh_projects_v3').insert(dataToInsert);
+                    if (error) throw error;
+
+                    alert('✅ นำเข้าข้อมูลสำเร็จ!');
+                    fetchProjects(); // โหลดตารางใหม่
+                } catch (err) {
+                    alert('❌ เกิดข้อผิดพลาดในการนำเข้า: ' + err.message);
+                } finally {
+                    const importBtn = document.getElementById('importJsonBtn');
+                    importBtn.innerHTML = '📥 นำเข้า JSON';
+                    importBtn.disabled = false;
+                    e.target.value = ''; // เคลียร์ไฟล์ออกจาก input
+                }
+            };
+            reader.readAsText(file);
+        });
 
         checkSession();
     </script>
