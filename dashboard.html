@@ -618,9 +618,9 @@
         // --- 1. ฟังก์ชันส่งออก JSON ---
         function exportToJson() {
             if (userRole !== 'super_admin') return alert('⛔ คุณไม่มีสิทธิ์ใช้งานฟังก์ชันนี้'); // ดักสิทธิ์
-            
-            if (!allProjectsData || allProjectsData.length === 0) {
-            
+                    if (!allProjectsData || allProjectsData.length === 0) {
+            return alert('ไม่มีข้อมูลสำหรับส่งออก');
+        }
             // แปลงข้อมูลเป็น JSON String (ใส่ null, 2 เพื่อให้โค้ดเว้นบรรทัดอ่านง่าย)
             const dataStr = JSON.stringify(allProjectsData, null, 2);
             const blob = new Blob([dataStr], { type: "application/json" });
