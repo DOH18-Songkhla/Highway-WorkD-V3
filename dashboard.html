@@ -199,7 +199,7 @@
     <!-- JavaScript ทำงานเบื้องหลัง -->
     <!-- ========================================== -->
     <script>
-        // เครื่องมือดักจับ Error บนมือถือ (ลบออกทีหลังได้)
+        // เครื่องมือดักจับ Error (ถ้ามี Error จะเด้งบอกทันที)
         window.onerror = function(message, source, lineno, colno, error) {
             alert("🚨 พบข้อผิดพลาด: \n" + message + "\n\nบรรทัดที่: " + lineno);
             return true;
@@ -216,9 +216,10 @@
         let allProjectsData = [];
         let currentYearTab = 'ทั้งหมด';
 
+        // 1. ตรวจสอบสิทธิ์ผู้ใช้งาน
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();            
-            if (!session) {window.location.href = 'index.html'; return;}
+            if (!session) { window.location.href = 'index.html'; return; }
             
             const user = session.user;
             const { data: profileData } = await supabaseClient.from('doh_profiles_v3').select('*').eq('id', user.id).single();
@@ -231,32 +232,44 @@
                         <div class="font-bold text-white">${profileData.full_name || user.email}</div>
                         <div class="text-xs text-blue-200">${profileData.position_name || '-'} (สิทธิ์: ${profileData.role})</div>
                     </div>`;                
-            // 1. สิทธิ์ที่ทั้ง Super Admin และ Admin ทำได้ (ปุ่มเพิ่มโครงการ)
+                
                 if (profileData.role === 'super_admin' || profileData.role === 'admin') {
                     document.getElementById('addProjectBtn').classList.remove('hidden');
                 }
 
-                // 2. สิทธิ์เฉพาะ Super Admin เท่านั้น (ปุ่มนำเข้า / ส่งออก JSON)
                 if (profileData.role === 'super_admin') {
                     document.getElementById('importJsonBtn').classList.remove('hidden');
                     document.getElementById('exportJsonBtn').classList.remove('hidden');
                 }
+            }
+            
+            fetchProjects(); // โค้ดที่หายไปน่าจะเป็นบรรทัดนี้ครับ
         }
-        }
+
+        // 2. ดึงข้อมูลโครงการ
         async function fetchProjects() {
             const container = document.getElementById('projectContainer');
             try {
-                const { data: projects, error } = await supabaseClient.from('doh_projects_v3').select('*').order('created_at', { ascending: false });
+                let query = supabaseClient.from('doh_projects_v3').select('*').order('created_at', { ascending: false });
+                
+                // ถ้าเป็น Admin แขวง ให้ดึงเฉพาะข้อมูลของแขวงตัวเอง
+                if (userRole !== 'super_admin') {
+                    query = query.eq('department_id', userDepartmentId);
+                }
+
+                const { data: projects, error } = await query;
                 if (error) throw error;
                 
                 allProjectsData = projects || [];
                 renderYearTabs();
                 renderTable();
             } catch (err) {
+                alert('แจ้งเตือน: เกิดข้อผิดพลาดในการดึงข้อมูล ' + err.message);
                 container.innerHTML = '<p class="text-red-500 font-bold py-8">เกิดข้อผิดพลาดในการดึงข้อมูล โปรดลองรีเฟรชหน้าเว็บ</p>';
             }
         }
 
+        // 3. วาดปุ่มแท็บปี พ.ศ.
         function renderYearTabs() {
             const tabsContainer = document.getElementById('yearTabsContainer');
             const years = [...new Set(allProjectsData.map(p => p.fiscal_year).filter(y => y))].sort((a, b) => b - a);
@@ -275,15 +288,13 @@
             renderTable(); 
         }
 
-// ฟังก์ชันวาดการแสดงผลแบบ Grid (Card)
+        // 4. วาดตารางแบบ Grid
         function renderTable() {
             const container = document.getElementById('projectContainer');
-            // เอาพื้นหลังสีเทาของ Container ออกเพื่อให้ Card ดูโดดเด่นขึ้น
             container.className = 'p-2 text-center text-gray-500 rounded'; 
             
             let displayProjects = allProjectsData;
 
-            // ถ้าไม่ได้เลือก "ทั้งหมด" ให้กรองข้อมูลตามปี พ.ศ.
             if (currentYearTab !== 'ทั้งหมด') {
                 displayProjects = displayProjects.filter(p => p.fiscal_year === currentYearTab);
             }
@@ -293,11 +304,9 @@
                 return;
             }
 
-            // ใช้ CSS Grid แบ่งคอลัมน์ (มือถือ 1, ไอแพด 2, จอใหญ่ 3)
             let gridHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">`;
 
             displayProjects.forEach(project => {
-                // จัดการสีของสถานะโครงการ
                 let statusColor = 'bg-gray-100 text-gray-800 border-gray-200'; 
                 if(project.status === 'ระหว่างก่อสร้าง') statusColor = 'bg-yellow-50 text-yellow-800 border-yellow-200';
                 if(project.status === 'รอส่งมอบงาน') statusColor = 'bg-blue-50 text-blue-800 border-blue-200';
@@ -306,7 +315,6 @@
                 if(project.status === 'แล้วเสร็จ') statusColor = 'bg-green-50 text-green-800 border-green-200';
                 if(project.status === 'บอกเลิกสัญญา') statusColor = 'bg-red-50 text-red-600 border-red-200';
 
-                // แถบ Progress Bar แบบปรับให้เข้ากับการ์ด
                 const progressVal = project.progress_percent || 0;
                 const progressBarHTML = `
                     <div class="mt-3">
@@ -320,17 +328,13 @@
                     </div>
                 `;
 
-                // จุดแดงแจ้งเตือน (ย้ายไปมุมขวาบนของการ์ด)
                 const redDotBadge = project.has_new_update 
                     ? `<div class="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-md animate-pulse z-10" title="มีการอัปเดตใหม่"></div>` 
                     : '';
 
-                // สร้าง Card 1 ใบ
                 gridHTML += `
                     <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-5 flex flex-col justify-between relative group">
                         ${redDotBadge}
-                        
-                        <!-- ส่วนข้อมูลด้านบน -->
                         <div>
                             <div class="flex justify-between items-start mb-2">
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">สัญญา: ${project.contract_number || '-'}</span>
@@ -338,32 +342,17 @@
                                     ${project.status || 'ไม่มีข้อมูล'}
                                 </span>
                             </div>
-                            
                             <h3 class="text-base font-bold text-gray-800 leading-snug mb-2 line-clamp-2" title="${project.project_name || '-'}">
                                 ${project.project_name || '-'}
                             </h3>
-                            
-                            <p class="text-xs text-gray-500 mb-1 flex items-center gap-1">
-                                👷 <span class="truncate">${project.contractor || '-'}</span>
-                            </p>
-                            <p class="text-xs text-gray-500 mb-3 flex items-center gap-1">
-                                📍 <span class="truncate">${project.route_number || '-'}</span>
-                            </p>
-
+                            <p class="text-xs text-gray-500 mb-1 flex items-center gap-1">👷 <span class="truncate">${project.contractor || '-'}</span></p>
+                            <p class="text-xs text-gray-500 mb-3 flex items-center gap-1">📍 <span class="truncate">${project.route_number || '-'}</span></p>
                             ${progressBarHTML}
                         </div>
-                        
-                        <!-- ส่วนปุ่มจัดการด้านล่าง -->
                         <div class="mt-5 pt-4 border-t border-gray-100 flex justify-between gap-2">
-                            <button onclick="viewProject('${project.id}')" class="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
-                                🔍 ดู
-                            </button>
-                            <button onclick="editProject('${project.id}')" class="flex-1 bg-amber-50 text-amber-600 hover:bg-amber-100 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">
-                                ✏️ แก้ไข
-                            </button>
-                            <button onclick="deleteProject('${project.id}', '${project.project_name}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center">
-                                🗑️
-                            </button>
+                            <button onclick="viewProject('${project.id}')" class="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">🔍 ดู</button>
+                            <button onclick="editProject('${project.id}')" class="flex-1 bg-amber-50 text-amber-600 hover:bg-amber-100 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">✏️ แก้ไข</button>
+                            <button onclick="deleteProject('${project.id}', '${project.project_name}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -373,6 +362,9 @@
             container.innerHTML = gridHTML;
         }
 
+        // ==========================================
+        // ส่วนจัดการข้อมูล (เพิ่ม/แก้ไข/ลบ/ดูรายละเอียด)
+        // ==========================================
         const modal = document.getElementById('projectModal');
         const projectForm = document.getElementById('projectForm');
         const addProjectBtn = document.getElementById('addProjectBtn');
@@ -402,7 +394,6 @@
             row.querySelector('.remove-c-btn').addEventListener('click', () =>row.remove());
         }
         addCommitteeBtn.addEventListener('click', () => addCommitteeRow());
-
         closeModalBtn.addEventListener('click', () => modal.classList.add('hidden'));
 
         addProjectBtn.addEventListener('click', () => {
@@ -487,11 +478,9 @@
                     route_number: document.getElementById('routeNum').value,
                     section_name: document.getElementById('sectionName').value,
                     km_range: document.getElementById('kmRange').value,
-                    
                     plan_percent: parseFloat(document.getElementById('planPercent').value) || 0,
                     actual_percent: parseFloat(document.getElementById('actualPercent').value) || 0,
                     progress_percent: parseFloat(document.getElementById('progressPercent').value) || 0,
-                    
                     total_budget: parseFloat(document.getElementById('totalBudget').value) || 0,
                     paid_amount: parseFloat(document.getElementById('paidAmount').value) || 0,
                     notes: document.getElementById('projectNotes').value,
@@ -502,13 +491,11 @@
 
                 if (currentEditId) {
                     projectData.has_new_update = (userRole !== 'super_admin'); 
-                    // 📌 จุดสำคัญที่ขาดหายไป: ดัก Error ตอน Update
                     const { error } = await supabaseClient.from('doh_projects_v3').update(projectData).eq('id', currentEditId);
                     if (error) throw error;
                     alert('✅ อัปเดตข้อมูลสำเร็จ!');
                 } else {
                     projectData.has_new_update = true; 
-                    // 📌 จุดสำคัญที่ขาดหายไป: ดัก Error ตอน Insert
                     const { error } = await supabaseClient.from('doh_projects_v3').insert([projectData]);
                     if (error) throw error;
                     alert('✅ เพิ่มโครงการใหม่สำเร็จ!');
@@ -568,7 +555,6 @@
                             <span class="text-xs text-gray-500 font-bold mt-2 block">สถานะปัจจุบัน</span><span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-white border">${p.status||'-'}</span>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center shadow-sm">
                             <span class="text-sm font-bold text-blue-800 block mb-1">แผนงาน</span>
@@ -583,7 +569,6 @@
                             <div class="text-2xl md:text-3xl font-black text-teal-600">${p.progress_percent || 0}%</div>
                         </div>
                     </div>
-
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div class="bg-purple-50 border border-purple-100 rounded-lg p-3 text-center">
                             <span class="text-xs font-bold text-purple-800">งบประมาณทั้งหมด</span>
@@ -594,7 +579,6 @@
                             <div class="text-xl font-bold text-amber-700 mt-1">${Number(p.paid_amount||0).toLocaleString()} ฿</div>
                         </div>
                     </div>
-
                     <div class="mb-6"><h4 class="font-bold text-sm text-gray-700 mb-2">👥 คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน</h4>${cHTML}</div>
                     <div class="mb-6 bg-yellow-50/60 p-3 rounded-lg border border-yellow-100"><h4 class="font-bold text-xs text-yellow-800 mb-1">📝 รายละเอียด / หมายเหตุ</h4><p class="text-sm text-gray-700 whitespace-pre-line">${p.notes||'ไม่มีบันทึกเพิ่มเติม'}</p></div>
                     <div><h4 class="font-bold text-sm text-gray-700 mb-3">📸 รูปภาพความก้าวหน้าหน้างาน</h4><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">${photosHTML}</div></div>
@@ -611,25 +595,22 @@
             } catch (err) { alert('เกิดข้อผิดพลาด: ' + err.message); }
         }
 
-// ==========================================
+        // ==========================================
         // 📥 ฟังก์ชัน นำเข้า / 📤 ส่งออก JSON
         // ==========================================
-
-        // --- 1. ฟังก์ชันส่งออก JSON ---
         function exportToJson() {
-            if (userRole !== 'super_admin') return alert('⛔ คุณไม่มีสิทธิ์ใช้งานฟังก์ชันนี้'); // ดักสิทธิ์
-                    if (!allProjectsData || allProjectsData.length === 0) {
-            return alert('ไม่มีข้อมูลสำหรับส่งออก');
-        }
-            // แปลงข้อมูลเป็น JSON String (ใส่ null, 2 เพื่อให้โค้ดเว้นบรรทัดอ่านง่าย)
+            if (userRole !== 'super_admin') return alert('⛔ คุณไม่มีสิทธิ์ใช้งานฟังก์ชันนี้'); 
+            
+            if (!allProjectsData || allProjectsData.length === 0) {
+                return alert('ไม่มีข้อมูลสำหรับส่งออก'); 
+            }
+            
             const dataStr = JSON.stringify(allProjectsData, null, 2);
             const blob = new Blob([dataStr], { type: "application/json" });
             const url = URL.createObjectURL(blob);
             
-            // สร้างลิงก์จำลองแล้วสั่งคลิกเพื่อดาวน์โหลดไฟล์
             const a = document.createElement('a');
             a.href = url;
-            // ตั้งชื่อไฟล์พร้อมวันที่
             const dateStr = new Date().toISOString().split('T')[0];
             a.download = `Highway_WorkD_Backup_${dateStr}.json`;
             document.body.appendChild(a);
@@ -638,9 +619,7 @@
             URL.revokeObjectURL(url);
         }
 
-        // --- 2. ฟังก์ชันนำเข้า JSON (รองรับไฟล์ V.2 และ V.3) ---
         document.getElementById('importJsonFile').addEventListener('change', function(e) {
-            // เช็คสิทธิ์ (ให้เฉพาะ super_admin นำเข้าได้)
             if (userRole !== 'super_admin') {
                 alert('⛔ คุณไม่มีสิทธิ์ใช้งานฟังก์ชันนี้');
                 e.target.value = ''; return;
@@ -667,15 +646,9 @@
                     importBtn.innerHTML = '⏳ กำลังนำเข้า...';
                     importBtn.disabled = true;
 
-                    // ปรับแต่งและ Map ข้อมูลก่อน Insert
                     const dataToInsert = jsonData.map(item => {
-                        // แยก id, created_at, updated_at และ cloud_id ออกเพื่อไม่ให้นำเข้าฐานข้อมูลใหม่
                         const { id, created_at, updated_at, cloud_id, ...rest } = item;
-                        
-                        // ตัวแปรสำหรับเก็บข้อมูลที่แปลงแล้ว (พร้อมใส่ V.3)
                         let mappedItem = {};
-
-                        // 1. จัดการแปลงชื่อฟิลด์จาก V.2 -> V.3
                         mappedItem.project_name = rest.name || rest.project_name || '-';
                         mappedItem.fiscal_year = rest.year || rest.fiscal_year || '';
                         mappedItem.funding_source = rest.source || rest.funding_source || '';
@@ -685,14 +658,11 @@
                         mappedItem.total_budget = parseFloat(rest.budget || rest.total_budget || 0);
                         mappedItem.paid_amount = parseFloat(rest.disbursed || rest.paid_amount || 0);
                         mappedItem.notes = rest.detail || rest.notes || '';
-                        
-                        // ฟิลด์ที่มีชื่อตรงกันอยู่แล้ว
                         mappedItem.contractor = rest.contractor || '';
                         mappedItem.section_name = rest.section_name || '';
                         mappedItem.km_range = rest.km_range || '';
                         mappedItem.committee_members = rest.persons || rest.committee_members || [];
                         
-                        // 2. แปลงสถานะ (Status) ของ V.2 เป็นข้อความภาษาไทยของ V.3
                         let thaiStatus = 'รอดำเนินการ';
                         const oldStatus = (rest.status || '').toLowerCase();
                         if (oldStatus === 'progress' || oldStatus === 'ระหว่างก่อสร้าง') thaiStatus = 'ระหว่างก่อสร้าง';
@@ -701,36 +671,32 @@
                         else if (oldStatus === 'completed' || oldStatus === 'แล้วเสร็จ') thaiStatus = 'แล้วเสร็จ';
                         mappedItem.status = thaiStatus;
 
-                        // 3. จัดการแผนงาน/ผลงาน (ถ้าไฟล์เก่าไม่มีให้เป็น 0)
                         mappedItem.plan_percent = parseFloat(rest.plan_percent || 0);
                         mappedItem.actual_percent = parseFloat(rest.actual_percent || 0);
-
-                        // 4. บังคับใส่แผนก (ถ้าไม่ใช่ super admin จะถูกบังคับเป็นแขวงตัวเอง)
-                        // แต่โค้ดนี้ให้เฉพาะ super_admin ใช้ ดังนั้นจะพยายามหา ID จากข้อมูลเดิม ถ้าไม่มีจะตั้งเป็น 1 (ทดสอบ)
                         mappedItem.department_id = rest.department_id || 1; 
 
                         return mappedItem;
                     });
 
-                    // บันทึกลง Supabase แบบรวดเดียว (Bulk Insert)
                     const { error } = await supabaseClient.from('doh_projects_v3').insert(dataToInsert);
                     if (error) throw error;
 
                     alert('✅ นำเข้าข้อมูลสำเร็จ! (แปลงรูปแบบไฟล์เรียบร้อย)');
-                    fetchProjects(); // โหลดตารางใหม่
+                    fetchProjects(); 
                 } catch (err) {
                     alert('❌ เกิดข้อผิดพลาดในการนำเข้า: ' + err.message);
                 } finally {
                     const importBtn = document.getElementById('importJsonBtn');
                     importBtn.innerHTML = '📥 นำเข้า JSON';
                     importBtn.disabled = false;
-                    e.target.value = ''; // เคลียร์ไฟล์ออกจาก input
+                    e.target.value = ''; 
                 }
             };
             reader.readAsText(file);
         });
 
-        checkSession();
+        checkSession(); // เริ่มต้นการทำงาน
     </script>
+
 </body>
 </html>
