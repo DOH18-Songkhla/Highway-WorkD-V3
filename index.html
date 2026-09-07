@@ -17,7 +17,6 @@
             <p class="text-xs text-blue-200">ระบบติดตามความก้าวหน้าโครงการ (ภาคประชาชน)</p>
         </div>
         <div id="authContainer">
-            <!-- ปุ่มล็อกอินเจ้าหน้าที่ (ซ่อน/แสดง ตามสถานะ) -->
             <button id="openLoginBtn" class="bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-bold shadow border border-blue-500 transition">
                 🔒 สำหรับเจ้าหน้าที่
             </button>
@@ -27,12 +26,36 @@
         </div>
     </nav>
 
-    <!-- พื้นที่แสดงกราฟสำหรับประชาชน -->
+    <!-- พื้นที่แสดงข้อมูลสำหรับประชาชน -->
     <div class="flex-1 p-4 md:p-8 flex flex-col items-center">
-        <div class="w-full max-w-6xl bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col h-[75vh]">
+        
+        <!-- 📌 3 กล่องสรุปข้อมูล (Summary Boxes) -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 w-full max-w-6xl mb-6">
+            <!-- กล่อง 1: จำนวนโครงการ -->
+            <div class="bg-white p-5 rounded-xl shadow-md border border-blue-100 flex flex-col items-center text-center">
+                <span class="text-gray-500 text-sm font-bold mb-1">จำนวนโครงการทั้งหมด</span>
+                <span id="sumProjects" class="text-4xl font-black text-blue-600">-</span>
+                <span class="text-xs text-gray-400 mt-1">โครงการ</span>
+            </div>
+            <!-- กล่อง 2: งบประมาณรวม -->
+            <div class="bg-white p-5 rounded-xl shadow-md border border-purple-100 flex flex-col items-center text-center">
+                <span class="text-gray-500 text-sm font-bold mb-1">งบประมาณรวมทั้งเขต</span>
+                <span id="sumBudget" class="text-3xl md:text-4xl font-black text-purple-600">-</span>
+                <span class="text-xs text-gray-400 mt-1">บาท</span>
+            </div>
+            <!-- กล่อง 3: เบิกจ่ายแล้ว -->
+            <div class="bg-white p-5 rounded-xl shadow-md border border-green-100 flex flex-col items-center text-center">
+                <span class="text-gray-500 text-sm font-bold mb-1">เบิกจ่ายสะสมแล้ว</span>
+                <span id="sumPaid" class="text-3xl md:text-4xl font-black text-green-600">-</span>
+                <span class="text-xs text-gray-400 mt-1">บาท</span>
+            </div>
+        </div>
+
+        <!-- กล่องแสดงกราฟ -->
+        <div class="w-full max-w-6xl bg-white p-6 rounded-xl shadow-lg border border-gray-100 flex flex-col h-[60vh]">
             <div class="mb-4 text-center md:text-left">
-                <h2 class="text-2xl font-black text-blue-800">ภาพรวมความก้าวหน้าโครงการ</h2>
-                <p class="text-gray-500 text-sm">อัปเดตข้อมูลล่าสุดจากแขวงทางหลวง</p>
+                <h2 class="text-2xl font-black text-blue-800">กราฟเปรียบเทียบความก้าวหน้าสะสม</h2>
+                <p class="text-gray-500 text-sm">ข้อมูลอัปเดตล่าสุดจากทุกแขวงทางหลวงในสังกัด</p>
             </div>
             
             <div class="flex-1 w-full relative bg-gray-50 rounded-lg p-4 border border-gray-100">
@@ -47,9 +70,9 @@
         </div>
     </div>
 
-    <!-- หน้าต่าง Pop-up สำหรับเข้าสู่ระบบ (ซ่อนไว้เป็นค่าเริ่มต้น) -->
+    <!-- หน้าต่าง Pop-up สำหรับเข้าสู่ระบบ -->
     <div id="loginModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md relative animate-fade-in-up">
+        <div class="bg-white p-8 rounded-xl shadow-2xl w-full max-w-md relative">
             <button id="closeLoginBtn" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 font-bold text-xl">✕</button>
             <div class="text-center mb-6">
                 <h2 class="text-2xl font-black text-blue-800">เข้าสู่ระบบเจ้าหน้าที่</h2>
@@ -86,20 +109,17 @@
         const loginForm = document.getElementById('loginForm');
         let chartInstance = null;
 
-        // 1. จัดการการเปิด-ปิดหน้าต่างล็อกอิน
         openLoginBtn.addEventListener('click', () => loginModal.classList.remove('hidden'));
         closeLoginBtn.addEventListener('click', () => loginModal.classList.add('hidden'));
 
-        // 2. เช็คว่าล็อกอินอยู่แล้วหรือเปล่า? (เพื่อเปลี่ยนปุ่มด้านบนขวา)
         async function checkSession() {
             const { data: { session } } = await supabaseClient.auth.getSession();
             if (session) {
                 openLoginBtn.classList.add('hidden');
-                goToDashboardBtn.classList.remove('hidden'); // ถ้าล็อกอินแล้ว โชว์ปุ่มเข้าหลังบ้าน
+                goToDashboardBtn.classList.remove('hidden'); 
             }
         }
 
-        // 3. ระบบเข้าสู่ระบบ
         loginForm.addEventListener('submit', async (e) => {
             e.preventDefault();
             const btn = document.getElementById('loginBtn');
@@ -114,34 +134,46 @@
                 alert('อีเมลหรือรหัสผ่านไม่ถูกต้อง');
                 btn.innerHTML = 'เข้าสู่ระบบ'; btn.disabled = false;
             } else {
-                // ถ้าล็อกอินสำเร็จ ให้เด้งไปหน้า dashboard ทันที
                 window.location.href = 'dashboard.html';
             }
         });
 
-        // 4. วาดกราฟสำหรับประชาชน (ดึงข้อมูลทั้งหมดโดยไม่สนแผนก)
-        async function loadPublicChart() {
+        // 📌 ฟังก์ชันดึงข้อมูลมาคำนวณลง 3 กล่อง และวาดกราฟ
+        async function loadPublicDashboard() {
             document.getElementById('loadingText').classList.remove('hidden');
             try {
-                // ดึงข้อมูลทั้งหมดที่สถานะไม่ใช่ 'รอดำเนินการ' (จะได้เห็นแต่งานที่เดินหน้าแล้ว)
+                // ดึงฟิลด์งบประมาณและยอดเบิกจ่ายมาด้วย เพื่อเอามาบวกลงกล่อง
                 const { data: projects, error } = await supabaseClient
                     .from('doh_projects_v3')
-                    .select('contract_number, project_name, progress_percent');
+                    .select('contract_number, project_name, progress_percent, total_budget, paid_amount');
 
                 document.getElementById('loadingText').classList.add('hidden');
-
                 if (error) throw error;
+
                 if (!projects || projects.length === 0) {
                     document.getElementById('noDataText').classList.remove('hidden');
                     return;
                 }
 
-                // เรียงเลขสัญญาจากน้อยไปมาก
+                // ----------------------------------------
+                // 1. คำนวณตัวเลขสำหรับ 3 กล่องสรุปยอด
+                // ----------------------------------------
+                const totalProjects = projects.length;
+                const totalBudget = projects.reduce((sum, p) => sum + (Number(p.total_budget) || 0), 0);
+                const totalPaid = projects.reduce((sum, p) => sum + (Number(p.paid_amount) || 0), 0);
+
+                // นำตัวเลขไปแสดงผล (ใช้ toLocaleString() เพื่อใส่ลูกน้ำคั่นหลักพัน)
+                document.getElementById('sumProjects').innerText = totalProjects.toLocaleString();
+                document.getElementById('sumBudget').innerText = totalBudget.toLocaleString();
+                document.getElementById('sumPaid').innerText = totalPaid.toLocaleString();
+
+                // ----------------------------------------
+                // 2. วาดกราฟแท่ง
+                // ----------------------------------------
                 projects.sort((a, b) => (a.contract_number || '').localeCompare(b.contract_number || '', 'th', { numeric: true }));
 
                 const labels = projects.map(p => p.contract_number || 'ไม่ระบุ');
                 const dataValues = projects.map(p => p.progress_percent || 0);
-                // เก็บชื่อโครงการไว้แสดงตอนเอาเมาส์ชี้
                 const projectNames = projects.map(p => p.project_name || '-');
 
                 const ctx = document.getElementById('publicChart').getContext('2d');
@@ -169,13 +201,8 @@
                             legend: { display: false },
                             tooltip: {
                                 callbacks: {
-                                    // เปลี่ยนข้อความใน Tooltip ให้แสดงชื่อโครงการด้วย
-                                    title: function(context) {
-                                        return 'สัญญา: ' + context[0].label;
-                                    },
-                                    afterTitle: function(context) {
-                                        return projectNames[context[0].dataIndex]; // โชว์ชื่อโครงการ
-                                    }
+                                    title: function(context) { return 'สัญญา: ' + context[0].label; },
+                                    afterTitle: function(context) { return projectNames[context[0].dataIndex]; }
                                 }
                             }
                         }
@@ -188,9 +215,8 @@
             }
         }
 
-        // เริ่มทำงาน
         checkSession();
-        loadPublicChart();
+        loadPublicDashboard();
     </script>
 </body>
 </html>
