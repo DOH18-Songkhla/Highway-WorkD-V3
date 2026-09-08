@@ -8,6 +8,7 @@
     <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 </head>
 <body class="bg-gray-100 min-h-screen relative">
 
@@ -598,6 +599,9 @@ projectForm.addEventListener('submit', async function(e) {
                     
                     <!-- 🛠️ ปุ่มจัดการถูกย้ายมาซ่อนไว้ตรงนี้ -->
                     <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end gap-3">
+                        <button onclick="exportProjectImage('${p.id}')" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                            📸 ออกรายงาน
+                        </button>
                         <button onclick="document.getElementById('viewModal').classList.add('hidden'); editProject('${p.id}');" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
                             ✏️ แก้ไขข้อมูล
                         </button>
@@ -719,7 +723,82 @@ projectForm.addEventListener('submit', async function(e) {
             };
             reader.readAsText(file);
         });
+        // ==========================================
+        // ฟังก์ชันสำหรับแคปรูปภาพรายงาน
+        // ==========================================
+        function toThaiNumerals(text) {
+            if (!text) return '';
+            const thaiNumbers = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
+            return text.toString().replace(/[0-9]/g, function(d) {
+                return thaiNumbers[d];
+            });
+        }
 
+        async function exportProjectImage(projectId) {
+            const btn = event.currentTarget;
+            const originalText = btn.innerHTML;
+            btn.innerHTML = '⏳ กำลังสร้างภาพ...';
+            btn.disabled = true;
+
+            try {
+                const { data: p, error } = await supabaseClient.from('doh_projects_v3').select('*').eq('id', projectId).single();
+                if (error) throw error;
+
+                // เช็คปัญหาอุปสรรค ถ้าไม่มีให้เป็นค่าว่าง (ซ่อนบรรทัด)
+                const notesHTML = (p.notes && p.notes.trim() !== '') 
+                    ? `<div class="mb-2 text-red-600">ปัญหาและอุปสรรค = ${toThaiNumerals(p.notes)}</div>` 
+                    : '';
+
+                // จัดการเรียงรูปภาพ 4 รูป
+                let imagesHTML = '';
+                const photos = [p.photo_1, p.photo_2, p.photo_3, p.photo_4].filter(url => url);
+                if (photos.length > 0) {
+                    imagesHTML = `<div class="grid grid-cols-2 gap-3 mt-5">`;
+                    photos.forEach(url => {
+                        imagesHTML += `<img src="${url}" class="w-full h-48 object-cover rounded-xl shadow-sm border border-gray-200">`;
+                    });
+                    imagesHTML += `</div>`;
+                }
+
+                // สร้างเทมเพลตซ่อนไว้
+                const exportContainer = document.createElement('div');
+                exportContainer.style.position = 'absolute';
+                exportContainer.style.left = '-9999px';
+                exportContainer.innerHTML = `
+                    <div id="exportTemplate" class="bg-white p-8 w-[650px] font-sans text-gray-800">
+                        <h2 class="text-2xl font-bold text-blue-900 mb-5 border-b-4 border-blue-800 pb-3">รายงานความก้าวหน้า<br><span class="text-lg text-gray-600">${p.project_name || '-'}</span></h2>
+                        <div class="text-lg font-medium leading-relaxed bg-gray-50 p-5 rounded-xl border border-gray-100">
+                            <div class="mb-2">สัญญาเลขที่ ${toThaiNumerals(p.contract_number || '-')}</div>
+                            <div class="mb-2 text-blue-700">แผนงาน = ${toThaiNumerals(p.plan_percent || 0)}%</div>
+                            <div class="mb-2 text-orange-600">ผลงานประจำสัปดาห์ = ${toThaiNumerals(p.actual_percent || 0)}%</div>
+                            <div class="mb-2 text-teal-600">ผลงานสะสม = ${toThaiNumerals(p.progress_percent || 0)}%</div>
+                            ${notesHTML}
+                            <div class="mt-4 pt-4 border-t border-gray-200 text-gray-700 font-bold">ผู้รับจ้าง = ${p.contractor || '-'}</div>
+                        </div>
+                        ${imagesHTML}
+                    </div>
+                `;
+                document.body.appendChild(exportContainer);
+
+                // สั่ง html2canvas แคปหน้าจอ
+                const templateElement = document.getElementById('exportTemplate');
+                const canvas = await html2canvas(templateElement, { scale: 2, backgroundColor: '#ffffff', useCORS: true });
+                
+                // ดาวน์โหลด
+                const link = document.createElement('a');
+                link.download = `รายงาน_${p.contract_number || 'โครงการ'}.jpg`;
+                link.href = canvas.toDataURL('image/jpeg', 0.9);
+                link.click();
+
+                document.body.removeChild(exportContainer);
+
+            } catch (err) {
+                alert('เกิดข้อผิดพลาดในการสร้างรูปภาพ: ' + err.message);
+            } finally {
+                btn.innerHTML = originalText;
+                btn.disabled = false;
+            }
+        }
         checkSession(); // เริ่มต้นการทำงาน
     </script>
 
