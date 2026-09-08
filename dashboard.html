@@ -726,14 +726,6 @@ projectForm.addEventListener('submit', async function(e) {
         // ==========================================
         // ฟังก์ชันสำหรับแคปรูปภาพรายงาน
         // ==========================================
-        function toThaiNumerals(text) {
-            if (!text) return '';
-            const thaiNumbers = ['๐', '๑', '๒', '๓', '๔', '๕', '๖', '๗', '๘', '๙'];
-            return text.toString().replace(/[0-9]/g, function(d) {
-                return thaiNumbers[d];
-            });
-        }
-
         async function exportProjectImage(projectId) {
             const btn = event.currentTarget;
             const originalText = btn.innerHTML;
@@ -744,39 +736,39 @@ projectForm.addEventListener('submit', async function(e) {
                 const { data: p, error } = await supabaseClient.from('doh_projects_v3').select('*').eq('id', projectId).single();
                 if (error) throw error;
 
-                // เช็คปัญหาอุปสรรค (ขยายฟอนต์ให้ใหญ่ขึ้น)
+                // เช็คปัญหาอุปสรรค (ไม่ใช้เลขไทยแล้ว)
                 const notesHTML = (p.notes && p.notes.trim() !== '') 
-                    ? `<div class="mb-3 text-red-600">ปัญหาและอุปสรรค = ${toThaiNumerals(p.notes)}</div>` 
+                    ? `<div class="mb-4 text-red-600">ปัญหาและอุปสรรค = ${p.notes}</div>` 
                     : '';
 
                 // จัดการเรียงรูปภาพ 4 รูป (1-2 บน, 3-4 ล่าง)
                 let imagesHTML = '';
                 const photos = [p.photo_1, p.photo_2, p.photo_3, p.photo_4].filter(url => url);
                 if (photos.length > 0) {
-                    // grid-cols-2 จะช่วยบังคับให้รูปเรียง 2 แถว แถวละ 2 รูปอัตโนมัติ
-                    imagesHTML = `<div class="grid grid-cols-2 gap-4 mt-6">`;
+                    imagesHTML = `<div class="grid grid-cols-2 gap-4 mt-8">`;
                     photos.forEach(url => {
-                        imagesHTML += `<img src="${url}" class="w-full h-56 object-cover rounded-xl shadow-sm border border-gray-200">`;
+                        imagesHTML += `<img src="${url}" class="w-full object-cover rounded-xl shadow-sm border border-gray-200" style="height: 300px;">`;
                     });
                     imagesHTML += `</div>`;
                 }
 
-                // สร้างเทมเพลตซ่อนไว้ (ปรับขนาดตัวอักษรให้ใหญ่ขึ้น)
+                // สร้างเทมเพลตซ่อนไว้ (บังคับขนาดฟอนต์ด้วย style ตรงๆ)
                 const exportContainer = document.createElement('div');
                 exportContainer.style.position = 'absolute';
                 exportContainer.style.left = '-9999px';
                 exportContainer.innerHTML = `
-                    <div id="exportTemplate" class="bg-white p-10 w-[700px] font-sans text-gray-800">
-                        <h2 class="text-3xl font-bold text-blue-900 mb-6 border-b-4 border-blue-800 pb-4 leading-tight">
-                            รายงานความก้าวหน้า<br><span class="text-2xl text-gray-600">${toThaiNumerals(p.project_name || '-')}</span>
+                    <div id="exportTemplate" class="bg-white font-sans text-gray-800" style="width: 800px; padding: 40px;">
+                        <h2 class="font-bold text-blue-900 border-b-4 border-blue-800 pb-4 mb-6 leading-tight" style="font-size: 36px;">
+                            รายงานความก้าวหน้า<br>
+                            <span style="font-size: 28px; color: #4B5563;">${p.project_name || '-'}</span>
                         </h2>
-                        <div class="text-xl font-medium leading-relaxed bg-gray-50 p-6 rounded-2xl border border-gray-200 shadow-sm">
-                            <div class="mb-3 text-gray-800 font-bold">สัญญาเลขที่ ${toThaiNumerals(p.contract_number || '-')}</div>
-                            <div class="mb-3 text-blue-700">แผนงาน = ${toThaiNumerals(p.plan_percent || 0)}%</div>
-                            <div class="mb-3 text-orange-600">ผลงานประจำสัปดาห์ = ${toThaiNumerals(p.actual_percent || 0)}%</div>
-                            <div class="mb-3 text-teal-600">ผลงานสะสม = ${toThaiNumerals(p.progress_percent || 0)}%</div>
+                        <div class="font-medium leading-relaxed bg-gray-50 rounded-2xl border border-gray-200 shadow-sm" style="font-size: 24px; padding: 30px;">
+                            <div class="mb-4 text-gray-800 font-bold">สัญญาเลขที่ ${p.contract_number || '-'}</div>
+                            <div class="mb-4 text-blue-700">แผนงาน = ${p.plan_percent || 0}%</div>
+                            <div class="mb-4 text-orange-600">ผลงานประจำสัปดาห์ = ${p.actual_percent || 0}%</div>
+                            <div class="mb-4 text-teal-600">ผลงานสะสม = ${p.progress_percent || 0}%</div>
                             ${notesHTML}
-                            <div class="mt-5 pt-5 border-t border-gray-300 text-gray-800 font-bold">ผู้รับจ้าง = ${toThaiNumerals(p.contractor || '-')}</div>
+                            <div class="mt-6 pt-6 border-t border-gray-300 text-gray-800 font-bold">ผู้รับจ้าง = ${p.contractor || '-'}</div>
                         </div>
                         ${imagesHTML}
                     </div>
