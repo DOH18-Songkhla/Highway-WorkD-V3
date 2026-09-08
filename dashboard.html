@@ -341,7 +341,7 @@
                     : '';
 
                 gridHTML += `
-                    <div class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-md transition-shadow duration-300 p-5 flex flex-col justify-between relative group">
+                    <div onclick="viewProject('${project.id}')" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-400 transition-all duration-300 p-5 flex flex-col justify-between relative group cursor-pointer transform hover:-translate-y-1">
                         ${redDotBadge}
                         <div>
                             <div class="flex justify-between items-start mb-2">
@@ -356,11 +356,6 @@
                             <p class="text-xs text-gray-500 mb-1 flex items-center gap-1">👷 <span class="truncate">${project.contractor || '-'}</span></p>
                             <p class="text-xs text-gray-500 mb-3 flex items-center gap-1">📍 <span class="truncate">${project.route_number || '-'}</span></p>
                             ${progressBarHTML}
-                        </div>
-                        <div class="mt-5 pt-4 border-t border-gray-100 flex justify-between gap-2">
-                            <button onclick="viewProject('${project.id}')" class="flex-1 bg-blue-50 text-blue-600 hover:bg-blue-100 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">🔍 ดู</button>
-                            <button onclick="editProject('${project.id}')" class="flex-1 bg-amber-50 text-amber-600 hover:bg-amber-100 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center gap-1">✏️ แก้ไข</button>
-                            <button onclick="deleteProject('${project.id}', '${project.project_name}')" class="bg-red-50 text-red-600 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center justify-center">🗑️</button>
                         </div>
                     </div>
                 `;
@@ -600,6 +595,16 @@ projectForm.addEventListener('submit', async function(e) {
                     <div class="mb-6"><h4 class="font-bold text-sm text-gray-700 mb-2">👥 คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน</h4>${cHTML}</div>
                     <div class="mb-6 bg-yellow-50/60 p-3 rounded-lg border border-yellow-100"><h4 class="font-bold text-xs text-yellow-800 mb-1">📝 รายละเอียด / หมายเหตุ</h4><p class="text-sm text-gray-700 whitespace-pre-line">${p.notes||'ไม่มีบันทึกเพิ่มเติม'}</p></div>
                     <div><h4 class="font-bold text-sm text-gray-700 mb-3">📸 รูปภาพความก้าวหน้าหน้างาน</h4><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">${photosHTML}</div></div>
+                    
+                    <!-- 🛠️ ปุ่มจัดการถูกย้ายมาซ่อนไว้ตรงนี้ -->
+                    <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end gap-3">
+                        <button onclick="document.getElementById('viewModal').classList.add('hidden'); editProject('${p.id}');" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                            ✏️ แก้ไขข้อมูล
+                        </button>
+                        <button onclick="deleteProject('${p.id}', '${p.project_name}')" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                            🗑️ ลบโครงการ
+                        </button>
+                    </div>
                 `;
             } catch (err) { viewContent.innerHTML = `<p class="text-red-500 text-center py-8">เกิดข้อผิดพลาด: ${err.message}</p>`; }
         }
@@ -609,7 +614,9 @@ projectForm.addEventListener('submit', async function(e) {
             try {
                 const { error } = await supabaseClient.from('doh_projects_v3').delete().eq('id', id);
                 if (error) throw error;
-                alert('🗑️ ลบโครงการเรียบร้อยแล้ว'); fetchProjects(); 
+                alert('🗑️ ลบโครงการเรียบร้อยแล้ว'); 
+                document.getElementById('viewModal').classList.add('hidden'); // ซ่อนหน้าต่างรายละเอียด
+                fetchProjects(); 
             } catch (err) { alert('เกิดข้อผิดพลาด: ' + err.message); }
         }
 
