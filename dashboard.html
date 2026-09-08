@@ -736,23 +736,25 @@ projectForm.addEventListener('submit', async function(e) {
                 const { data: p, error } = await supabaseClient.from('doh_projects_v3').select('*').eq('id', projectId).single();
                 if (error) throw error;
 
-                // เช็คปัญหาอุปสรรค (ไม่ใช้เลขไทยแล้ว)
+                // เช็คปัญหาอุปสรรค (บรรทัดนี้ใช้เลขอารบิคตามเดิม)
                 const notesHTML = (p.notes && p.notes.trim() !== '') 
                     ? `<div class="mb-4 text-red-600">ปัญหาและอุปสรรค = ${p.notes}</div>` 
                     : '';
 
-                // จัดการเรียงรูปภาพ 4 รูป (1-2 บน, 3-4 ล่าง)
+                // 📌 จัดการเรียงรูปภาพ 4 รูป บังคับเป็น Grid 2x2 ด้วย Inline CSS
                 let imagesHTML = '';
                 const photos = [p.photo_1, p.photo_2, p.photo_3, p.photo_4].filter(url => url);
                 if (photos.length > 0) {
-                    imagesHTML = `<div class="grid grid-cols-2 gap-4 mt-8">`;
-                    photos.forEach(url => {
-                        imagesHTML += `<img src="${url}" class="w-full object-cover rounded-xl shadow-sm border border-gray-200" style="height: 300px;">`;
+                    imagesHTML = `<div style="margin-top: 32px; font-size: 0;">`; // font-size: 0 กันช่องว่างระหว่างรูป
+                    photos.forEach((url, index) => {
+                        // ถ้ารูปเป็นลำดับคี่ (รูป 1, 3) ให้อยู่ซ้าย ถ้ารูปคู่ (รูป 2, 4) ให้อยู่ขวา
+                        const marginRight = (index % 2 === 0) ? '2%' : '0';
+                        imagesHTML += `<img src="${url}" style="width: 49%; height: 320px; object-fit: cover; border-radius: 12px; border: 1px solid #e5e7eb; display: inline-block; margin-bottom: 2%; margin-right: ${marginRight};">`;
                     });
                     imagesHTML += `</div>`;
                 }
 
-                // สร้างเทมเพลตซ่อนไว้ (บังคับขนาดฟอนต์ด้วย style ตรงๆ)
+                // สร้างเทมเพลตซ่อนไว้
                 const exportContainer = document.createElement('div');
                 exportContainer.style.position = 'absolute';
                 exportContainer.style.left = '-9999px';
