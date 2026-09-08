@@ -458,25 +458,31 @@
                 return supabaseClient.storage.from('project_photos').getPublicUrl(filePath).data.publicUrl;
             } catch (err) { return null; }
         }
-        
-        projectForm.addEventListener('submit', async function(e) {
+
+// ====================================================
+// ลอจิกการบันทึกข้อมูล (อัปเดตใหม่ ป้องกัน department_id เพี้ยน)
+// ====================================================
+projectForm.addEventListener('submit', async function(e) {
             e.preventDefault();
             const saveBtn = document.getElementById('saveProjectBtn');
             saveBtn.innerHTML = '⏳ กำลังประมวลผล...'; saveBtn.disabled = true;
 
             try {
+                // 1. จัดการรูปภาพ
                 const p1 = await uploadImage('photo1') || currentExistingPhotos.photo_1 || null;
                 const p2 = await uploadImage('photo2') || currentExistingPhotos.photo_2 || null;
                 const p3 = await uploadImage('photo3') || currentExistingPhotos.photo_3 || null;
                 const p4 = await uploadImage('photo4') || currentExistingPhotos.photo_4 || null;
 
+                // 2. จัดการข้อมูลคณะกรรมการ
                 const committeeMembers = [];
                 document.querySelectorAll('.committee-row').forEach(row => {
                     const name = row.querySelector('.c-name').value.trim();
                     if (name) committeeMembers.push({ name, position: row.querySelector('.c-position').value, role: row.querySelector('.c-role').value });
                 });
 
-                const projectData = {
+                // 3. แพ็กข้อมูลพื้นฐาน (⚠️ สังเกตว่าเราตัด department_id ออกจากตรงนี้)
+                const baseProjectData = {
                     project_name: document.getElementById('projectName').value,
                     fiscal_year: document.getElementById('fiscalYear').value,
                     funding_source: document.getElementById('fundingSource').value,
@@ -492,19 +498,23 @@
                     total_budget: parseFloat(document.getElementById('totalBudget').value) || 0,
                     paid_amount: parseFloat(document.getElementById('paidAmount').value) || 0,
                     notes: document.getElementById('projectNotes').value,
-                    department_id: userDepartmentId,
                     committee_members: committeeMembers,
                     photo_1: p1, photo_2: p2, photo_3: p3, photo_4: p4
                 };
 
                 if (currentEditId) {
-                    projectData.has_new_update = (userRole !== 'super_admin'); 
-                    const { error } = await supabaseClient.from('doh_projects_v3').update(projectData).eq('id', currentEditId);
+                    // 🟢 กรณีแก้ไขข้อมูล (Update)
+                    // ใส่แค่สถานะการอัปเดต ไม่ต้องแนบ department_id ไปทับ
+                    baseProjectData.has_new_update = (userRole !== 'super_admin'); 
+                    const { error } = await supabaseClient.from('doh_projects_v3').update(baseProjectData).eq('id', currentEditId);
                     if (error) throw error;
                     alert('✅ อัปเดตข้อมูลสำเร็จ!');
                 } else {
-                    projectData.has_new_update = true; 
-                    const { error } = await supabaseClient.from('doh_projects_v3').insert([projectData]);
+                    // 🔵 กรณีเพิ่มโครงการใหม่ (Insert)
+                    // อันนี้ต้องแนบ department_id เข้าไปเพิ่ม เพื่อให้รู้ว่าเป็นของแขวงไหน
+                    baseProjectData.department_id = userDepartmentId; 
+                    baseProjectData.has_new_update = true; 
+                    const { error } = await supabaseClient.from('doh_projects_v3').insert([baseProjectData]);
                     if (error) throw error;
                     alert('✅ เพิ่มโครงการใหม่สำเร็จ!');
                 }
