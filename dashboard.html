@@ -101,6 +101,21 @@
                         <label class="block text-gray-700 text-sm font-bold mb-1">เลขที่สัญญา</label>
                         <input type="text" id="contractNum" placeholder="เลขที่สัญญา" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
                     </div>
+                    <!-- 💡 [เพิ่มใหม่] แถวสำหรับวันที่สัญญา 3 ช่อง -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">วันที่ทำสัญญา</label>
+                        <input type="date" id="contractDate" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">วันที่เริ่มต้นสัญญา</label>
+                        <input type="date" id="contractStartDate" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-1">วันที่หมดสัญญา</label>
+                        <input type="date" id="contractEndDate" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
+                    </div>
+                </div>
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-1">ผู้รับจ้าง</label>
                         <input type="text" id="contractor" placeholder="ชื่อผู้รับจ้าง" class="shadow-sm border rounded w-full py-2 px-3 text-gray-700 focus:ring-2 focus:ring-purple-500">
@@ -421,6 +436,10 @@
                 document.getElementById('fundingSource').value = project.funding_source || '';
                 document.getElementById('projectStatus').value = project.status || 'รอดำเนินการ';
                 document.getElementById('contractNum').value = project.contract_number || '';
+                // 💡 [เพิ่มใหม่] ดึงวันที่มาแสดงในฟอร์มแก้ไข
+                document.getElementById('contractDate').value = project.contract_date || '';
+                document.getElementById('contractStartDate').value = project.contract_start_date || '';
+                document.getElementById('contractEndDate').value = project.contract_end_date || '';
                 document.getElementById('contractor').value = project.contractor || '';
                 document.getElementById('routeNum').value = project.route_number || '';
                 document.getElementById('sectionName').value = project.section_name || '';
@@ -484,6 +503,10 @@ projectForm.addEventListener('submit', async function(e) {
                     funding_source: document.getElementById('fundingSource').value,
                     status: document.getElementById('projectStatus').value,
                     contract_number: document.getElementById('contractNum').value,
+                    // 💡 [เพิ่มใหม่] เก็บค่าวันที่ส่งไปบันทึก
+                    contract_date: document.getElementById('contractDate').value || null,
+                    contract_start_date: document.getElementById('contractStartDate').value || null,
+                    contract_end_date: document.getElementById('contractEndDate').value || null,
                     contractor: document.getElementById('contractor').value,
                     route_number: document.getElementById('routeNum').value,
                     section_name: document.getElementById('sectionName').value,
@@ -555,20 +578,32 @@ projectForm.addEventListener('submit', async function(e) {
                 });
 
                 viewContent.innerHTML = `
-                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-blue-50/50 p-4 rounded-lg border border-blue-100 mb-6">
-                        <div>
-                            <span class="text-xs text-gray-500 font-bold">ชื่อโครงการ</span><p class="text-sm font-semibold text-gray-900">${p.project_name||'-'}</p>
-                            <span class="text-xs text-gray-500 font-bold mt-2 block">เลขที่สัญญา</span><p class="text-sm text-gray-800">${p.contract_number||'-'}</p>
+                    <!-- 💡 [อัปเดตเลย์เอาต์ใหม่ตามภาพเป๊ะๆ (3x3 Grid)] -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#e6edf7] p-6 rounded-xl mb-6 shadow-sm">
+                        <!-- คอลัมน์ 1 -->
+                        <div class="space-y-5">
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ชื่อโครงการ</span><p class="text-sm font-semibold text-gray-900 leading-tight">${p.project_name||'-'}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">สายทาง / ช่วงควบคุม</span><p class="text-sm text-gray-800 leading-tight">${p.route_number||'-'} ${p.section_name||''} ${p.km_range ? '('+p.km_range+')' : ''}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">เลขที่สัญญา</span><p class="text-sm text-gray-800">${p.contract_number||'-'}</p></div>
                         </div>
-                        <div>
-                            <span class="text-xs text-gray-500 font-bold">ผู้รับจ้าง</span><p class="text-sm text-gray-800">${p.contractor||'-'}</p>
-                            <span class="text-xs text-gray-500 font-bold mt-2 block">สายทาง / ช่วงควบคุม</span><p class="text-sm text-gray-800">${p.route_number||'-'} ${p.section_name||''} (${p.km_range||'-'})</p>
+                        
+                        <!-- คอลัมน์ 2 -->
+                        <div class="space-y-5">
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่ทำสัญญา</span><p class="text-sm text-gray-800">${formatDateThai(p.contract_date)}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่สัญญาเริ่มต้น</span><p class="text-sm text-gray-800">${formatDateThai(p.contract_start_date)}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่หมดสัญญา</span><p class="text-sm text-gray-800">${formatDateThai(p.contract_end_date)}</p></div>
                         </div>
-                        <div>
-                            <span class="text-xs text-gray-500 font-bold">ปีงบประมาณ / แหล่งทุน</span><p class="text-sm text-gray-800">${p.fiscal_year||'-'} (${p.funding_source||'-'})</p>
-                            <span class="text-xs text-gray-500 font-bold mt-2 block">สถานะปัจจุบัน</span><span class="inline-block mt-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-white border">${p.status||'-'}</span>
+                        
+                        <!-- คอลัมน์ 3 -->
+                        <div class="space-y-5">
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ผู้รับจ้าง</span><p class="text-sm text-gray-800">${p.contractor||'-'}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ปีงบประมาณ / แหล่งงบประมาณ</span><p class="text-sm text-gray-800">${p.fiscal_year||'-'} ${p.funding_source ? '('+p.funding_source+')' : ''}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">สถานะปัจจุบัน</span><span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-bold bg-white border border-gray-200 shadow-sm">${p.status||'-'}</span></div>
                         </div>
                     </div>
+
+                    <!-- ส่วนของกราฟตัวเลข แผนงาน 3 กล่อง และเนื้อหาอื่นๆ ของเดิมอยู่ตรงนี้ -->
+                    <div class="grid grid-cols-3 gap-4 mb-4">
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center shadow-sm">
                             <span class="text-sm font-bold text-blue-800 block mb-1">แผนงาน</span>
