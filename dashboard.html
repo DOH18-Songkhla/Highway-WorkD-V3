@@ -758,6 +758,20 @@ projectForm.addEventListener('submit', async function(e) {
                     imagesHTML += `</div>`;
                 }
 
+                // 💡 [เพิ่มใหม่] ค้นหาชื่อ "ผู้ควบคุมงาน" จากรายชื่อคณะกรรมการ
+                let supervisorName = 'ไม่ระบุชื่อ';
+                let supervisorPosition = 'ผู้ควบคุมงาน';
+                
+                if (p.committee_members && p.committee_members.length > 0) {
+                    // ลองหาคนที่เป็น 'ผู้ควบคุมงาน' ถ้าไม่เจอให้เอาคนแรกในลิสต์มาแสดงแทน
+                    const supervisor = p.committee_members.find(c => c.role === 'ผู้ควบคุมงาน') || p.committee_members[0];
+                    supervisorName = supervisor.name || 'ไม่ระบุชื่อ';
+                    supervisorPosition = supervisor.position || supervisor.role || 'ผู้ควบคุมงาน';
+                }
+
+                // 💡 [เพิ่มใหม่] สร้างรูป Avatar อัตโนมัติจากชื่อ (ดึง API มาใช้ฟรีๆ)
+                const avatarUrl = `https://ui-avatars.com/api/?name=${encodeURIComponent(supervisorName)}&background=ffffff&color=1e3a8a&size=120&font-size=0.33&rounded=true`;
+
                 // สร้างเทมเพลตซ่อนไว้ (ใส่ดีไซน์อินโฟกราฟิกแบบเต็มรูปแบบ)
                 const exportContainer = document.createElement('div');
                 exportContainer.style.position = 'absolute';
@@ -765,13 +779,27 @@ projectForm.addEventListener('submit', async function(e) {
                 exportContainer.innerHTML = `
                     <div id="exportTemplate" class="font-sans text-gray-800" style="width: 800px; background-color: #ffffff; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 25px rgba(0,0,0,0.1);">
                         
-                        <!-- Header Banner -->
-                        <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 30px 40px; color: white;">
-                            <h2 style="margin: 0; font-size: 32px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
-                                📊 รายงานความก้าวหน้าโครงการ
-                            </h2>
-                            <div style="font-size: 22px; margin-top: 10px; opacity: 0.9; line-height: 1.4;">
-                                ${p.project_name || '-'}
+                        <!-- Header Banner (💡 ปรับโครงสร้างเป็น Flexbox ซ้าย-ขวา) -->
+                        <div style="background: linear-gradient(135deg, #1e3a8a, #3b82f6); padding: 30px 40px; color: white; display: flex; justify-content: space-between; align-items: flex-start;">
+                            
+                            <!-- ฝั่งซ้าย: หัวข้อและชื่อโครงการ -->
+                            <div style="flex: 1; padding-right: 20px;">
+                                <h2 style="margin: 0; font-size: 32px; font-weight: bold; display: flex; align-items: center; gap: 10px;">
+                                    📊 รายงานความก้าวหน้า
+                                </h2>
+                                <div style="font-size: 22px; margin-top: 10px; opacity: 0.9; line-height: 1.4;">
+                                    ${p.project_name || '-'}
+                                </div>
+                            </div>
+
+                            <!-- ฝั่งขวา: โปรไฟล์ผู้ควบคุมงาน -->
+                            <div style="display: flex; align-items: center; gap: 15px; text-align: right; min-width: max-content;">
+                                <div style="display: flex; flex-direction: column; justify-content: center;">
+                                    <span style="font-size: 16px; font-weight: bold; color: #bfdbfe;">ผู้ควบคุมงาน</span>
+                                    <span style="font-size: 20px; font-weight: bold; margin-top: 2px;">${supervisorName}</span>
+                                    <span style="font-size: 14px; opacity: 0.8; margin-top: 2px;">${supervisorPosition}</span>
+                                </div>
+                                <img src="${avatarUrl}" style="width: 75px; height: 75px; border-radius: 50%; border: 3px solid white; box-shadow: 0 4px 10px rgba(0,0,0,0.2); object-fit: cover; background-color: white;">
                             </div>
                         </div>
 
