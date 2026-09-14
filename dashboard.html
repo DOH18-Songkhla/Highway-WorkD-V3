@@ -577,74 +577,119 @@ projectForm.addEventListener('submit', async function(e) {
                     else photosHTML += `<div class="border-2 border-dashed border-gray-200 rounded-lg h-44 flex flex-col items-center justify-center text-gray-400 bg-gray-50"><span class="text-2xl mb-1">📷</span><span class="text-xs">ไม่มีรูปที่ ${i+1}</span></div>`;
                 });
 
-                viewContent.innerHTML = `
-                    <!-- 💡 [อัปเดตเลย์เอาต์ใหม่ตามภาพเป๊ะๆ (3x3 Grid)] -->
+                viewContent.innerHTML = 
+`
+                    <!-- 💡 ข้อมูลพื้นฐาน 3x3 -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#e6edf7] p-6 rounded-xl mb-6 shadow-sm">
-                        <!-- คอลัมน์ 1 -->
                         <div class="space-y-5">
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ชื่อโครงการ</span><p class="text-sm font-semibold text-gray-900 leading-tight">${p.project_name||'-'}</p></div>
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">สายทาง / ช่วงควบคุม</span><p class="text-sm text-gray-800 leading-tight">${p.route_number||'-'} ${p.section_name||''} ${p.km_range ? '('+p.km_range+')' : ''}</p></div>
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">เลขที่สัญญา</span><p class="text-sm text-gray-800">${p.contract_number||'-'}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ชื่อโครงการ</span><p class="text-sm font-semibold text-gray-900 leading-tight">
+${p.project_name||'-'}
+</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">สายทาง / ช่วงควบคุม</span><p class="text-sm text-gray-800 leading-tight">
+${p.route_number||'-'} ${p.section_name||''} ${p.km_range ? '('+p.km_range+')' : ''}
+</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">เลขที่สัญญา</span><p class="text-sm text-gray-800">
+${p.contract_number||'-'}
+</p></div>
                         </div>
-                        
-                        <!-- คอลัมน์ 2 -->
                         <div class="space-y-5">
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่ทำสัญญา</span><p class="text-sm text-gray-800">${p.contract_date}</p></div>
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่สัญญาเริ่มต้น</span><p class="text-sm text-gray-800">${p.contract_start_date}</p></div>
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่หมดสัญญา</span><p class="text-sm text-gray-800">${p.contract_end_date}</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่ทำสัญญา</span><p class="text-sm text-gray-800">
+${formatDateThai(p.contract_date)}
+</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่สัญญาเริ่มต้น</span><p class="text-sm text-gray-800">
+${formatDateThai(p.contract_start_date)}
+</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">วันที่หมดสัญญา</span><p class="text-sm text-gray-800">
+${formatDateThai(p.contract_end_date)}
+</p></div>
                         </div>
-                        
-                        <!-- คอลัมน์ 3 -->
                         <div class="space-y-5">
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ผู้รับจ้าง</span><p class="text-sm text-gray-800">${p.contractor||'-'}</p></div>
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ปีงบประมาณ / แหล่งงบประมาณ</span><p class="text-sm text-gray-800">${p.fiscal_year||'-'} ${p.funding_source ? '('+p.funding_source+')' : ''}</p></div>
-                            <div><span class="text-xs text-gray-500 font-bold block mb-1">สถานะปัจจุบัน</span><span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-bold bg-white border border-gray-200 shadow-sm">${p.status||'-'}</span></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ผู้รับจ้าง</span><p class="text-sm text-gray-800">
+${p.contractor||'-'}
+</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">ปีงบประมาณ / แหล่งงบประมาณ</span><p class="text-sm text-gray-800">
+${p.fiscal_year||'-'} ${p.funding_source ? '('+p.funding_source+')' : ''}
+</p></div>
+                            <div><span class="text-xs text-gray-500 font-bold block mb-1">สถานะปัจจุบัน</span><span class="inline-block mt-1 px-3 py-1 rounded-full text-xs font-bold bg-white border border-gray-200 shadow-sm">
+${p.status||'-'}
+</span></div>
                         </div>
                     </div>
 
-                    <!-- ส่วนของกราฟตัวเลข แผนงาน 3 กล่อง และเนื้อหาอื่นๆ ของเดิมอยู่ตรงนี้ -->
-                    <div class="grid grid-cols-3 gap-4 mb-4">
+                    <!-- 💡 เปอร์เซ็นต์งาน -->
                     <div class="grid grid-cols-3 gap-4 mb-4">
                         <div class="bg-blue-50 border border-blue-200 rounded-2xl p-4 text-center shadow-sm">
                             <span class="text-sm font-bold text-blue-800 block mb-1">แผนงาน</span>
-                            <div class="text-2xl md:text-3xl font-black text-blue-600">${p.plan_percent || 0}%</div>
+                            <div class="text-2xl md:text-3xl font-black text-blue-600">
+${p.plan_percent || 0}
+%</div>
                         </div>
                         <div class="bg-orange-50 border border-orange-200 rounded-2xl p-4 text-center shadow-sm">
                             <span class="text-sm font-bold text-orange-800 block mb-1">ผลงานสัปดาห์นี้</span>
-                            <div class="text-2xl md:text-3xl font-black text-orange-600">${p.actual_percent || 0}%</div>
+                            <div class="text-2xl md:text-3xl font-black text-orange-600">
+${p.actual_percent || 0}
+%</div>
                         </div>
                         <div class="bg-teal-50 border border-teal-200 rounded-2xl p-4 text-center shadow-sm">
                             <span class="text-sm font-bold text-teal-800 block mb-1">ผลงานสะสม</span>
-                            <div class="text-2xl md:text-3xl font-black text-teal-600">${p.progress_percent || 0}%</div>
+                            <div class="text-2xl md:text-3xl font-black text-teal-600">
+${p.progress_percent || 0}
+%</div>
                         </div>
                     </div>
+
+                    <!-- 💡 งบประมาณ -->
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                         <div class="bg-purple-50 border border-purple-100 rounded-lg p-3 text-center">
                             <span class="text-xs font-bold text-purple-800">งบประมาณทั้งหมด</span>
-                            <div class="text-xl font-bold text-purple-700 mt-1">${Number(p.total_budget||0).toLocaleString()} ฿</div>
+                            <div class="text-xl font-bold text-purple-700 mt-1">
+${Number(p.total_budget||0).toLocaleString()}
+ ฿</div>
                         </div>
                         <div class="bg-amber-50 border border-amber-100 rounded-lg p-3 text-center">
                             <span class="text-xs font-bold text-amber-800">เบิกจ่ายแล้ว</span>
-                            <div class="text-xl font-bold text-amber-700 mt-1">${Number(p.paid_amount||0).toLocaleString()} ฿</div>
+                            <div class="text-xl font-bold text-amber-700 mt-1">
+${Number(p.paid_amount||0).toLocaleString()}
+ ฿</div>
                         </div>
                     </div>
-                    <div class="mb-6"><h4 class="font-bold text-sm text-gray-700 mb-2">👥 คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน</h4>${cHTML}</div>
-                    <div class="mb-6 bg-yellow-50/60 p-3 rounded-lg border border-yellow-100"><h4 class="font-bold text-xs text-yellow-800 mb-1">📝 รายละเอียด / หมายเหตุ</h4><p class="text-sm text-gray-700 whitespace-pre-line">${p.notes||'ไม่มีบันทึกเพิ่มเติม'}</p></div>
-                    <div><h4 class="font-bold text-sm text-gray-700 mb-3">📸 รูปภาพความก้าวหน้าหน้างาน</h4><div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">${photosHTML}</div></div>
+
+                    <!-- 💡 คณะกรรมการ & หมายเหตุ -->
+                    <div class="mb-6"><h4 class="font-bold text-sm text-gray-700 mb-2">👥 คณะกรรมการตรวจรับพัสดุ / ผู้ควบคุมงาน</h4>
+${cHTML}
+</div>
+                    <div class="mb-6 bg-yellow-50/60 p-3 rounded-lg border border-yellow-100"><h4 class="font-bold text-xs text-yellow-800 mb-1">📝 รายละเอียด / หมายเหตุ</h4><p class="text-sm text-gray-700 whitespace-pre-line">
+${p.notes||'ไม่มีบันทึกเพิ่มเติม'}
+</p></div>
                     
-                    <!-- 🛠️ ปุ่มจัดการถูกย้ายมาซ่อนไว้ตรงนี้ -->
+                    <!-- 💡 รูปภาพหน้างาน (ปิด div ให้ครบถ้วน ป้องกันปุ่มหลุดเข้ามา) -->
+                    <div>
+                        <h4 class="font-bold text-sm text-gray-700 mb-3">📸 รูปภาพความก้าวหน้าหน้างาน</h4>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+${photosHTML}
+</div>
+                    </div>
+                    
+                    <!-- 💡 ปุ่มจัดการ (แยกกล่องออกมาต่างหาก จัดให้อยู่ขวาสุด) -->
                     <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end gap-3">
-                        <button onclick="exportProjectImage('${p.id}')" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                        <button onclick="exportProjectImage('
+${p.id}
+')" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
                             📸 ออกรายงาน
                         </button>
-                        <button onclick="document.getElementById('viewModal').classList.add('hidden'); editProject('${p.id}');" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                        <button onclick="document.getElementById('viewModal').classList.add('hidden'); editProject('
+${p.id}
+');" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
                             ✏️ แก้ไขข้อมูล
                         </button>
-                        <button onclick="deleteProject('${p.id}', '${p.project_name}')" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                        <button onclick="deleteProject('
+${p.id}', '${p.project_name}
+')" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
                             🗑️ ลบโครงการ
                         </button>
                     </div>
-                `;
+                `
+;
             } catch (err) { viewContent.innerHTML = `<p class="text-red-500 text-center py-8">เกิดข้อผิดพลาด: ${err.message}</p>`; }
         }
 
