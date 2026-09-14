@@ -356,9 +356,24 @@
                     ? `<div class="absolute -top-2 -right-2 w-4 h-4 bg-red-500 rounded-full border-2 border-white shadow-md animate-pulse z-10" title="มีการอัปเดตใหม่"></div>` 
                     : '';
 
+                // 💡 [เพิ่มใหม่] ค่ายกลเช็กวันสิ้นสุดสัญญา
+                let expiredBadge = '';
+                if (project.contract_end_date && project.status !== 'แล้วเสร็จ') {
+                    const endDate = new Date(project.contract_end_date);
+                    const today = new Date();
+                    // เซ็ตเวลาให้เป็นเที่ยงคืนตรง เพื่อเทียบแค่วันที่
+                    endDate.setHours(0,0,0,0); 
+                    today.setHours(0,0,0,0);
+                    
+                    if (endDate < today) {
+                        expiredBadge = `<div class="absolute -top-3 -left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-md z-10 animate-bounce">⚠️ สิ้นสุดสัญญา</div>`;
+                    }
+                }
+
                 gridHTML += `
                     <div onclick="viewProject('${project.id}')" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-400 transition-all duration-300 p-5 flex flex-col justify-between relative group cursor-pointer transform hover:-translate-y-1">
                         ${redDotBadge}
+                        ${expiredBadge} <!-- 💡 แปะป้ายเตือนตรงนี้ -->
                         <div>
                             <div class="flex justify-between items-start mb-2">
                                 <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">สัญญา: ${project.contract_number || '-'}</span>
@@ -577,7 +592,29 @@ projectForm.addEventListener('submit', async function(e) {
                     else photosHTML += `<div class="border-2 border-dashed border-gray-200 rounded-lg h-44 flex flex-col items-center justify-center text-gray-400 bg-gray-50"><span class="text-2xl mb-1">📷</span><span class="text-xs">ไม่มีรูปที่ ${i+1}</span></div>`;
                 });
 
+                // 💡 [เพิ่มใหม่] ค่ายกลเช็กวันสิ้นสุดสัญญา (แบบแบนเนอร์ยาว)
+                let expiredAlertBanner = '';
+                if (p.contract_end_date && p.status !== 'แล้วเสร็จ') {
+                    const endDate = new Date(p.contract_end_date);
+                    const today = new Date();
+                    endDate.setHours(0,0,0,0); today.setHours(0,0,0,0);
+                    
+                    if (endDate < today) {
+                        expiredAlertBanner = `
+                        <div class="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-lg flex items-center gap-3 mb-4 shadow-sm animate-pulse">
+                            <span class="text-2xl">🚨</span>
+                            <div>
+                                <h4 class="font-bold text-sm">แจ้งเตือนโครงการล่าช้า</h4>
+                                <p class="text-xs">โครงการนี้ได้ล่วงเลย <b>"วันที่สิ้นสุดสัญญา"</b> มาแล้ว กรุณาตรวจสอบสถานะและการขยายเวลา</p>
+                            </div>
+                        </div>`;
+                    }
+                }
+
                 viewContent.innerHTML = `
+                    <!-- 💡 นำแบนเนอร์มาวางไว้บนสุดก่อนเริ่มตาราง 3x3 -->
+                    ${expiredAlertBanner}
+
                     <!-- 💡 ข้อมูลพื้นฐาน 3x3 -->
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 bg-[#e6edf7] p-6 rounded-xl mb-6 shadow-sm">
                         <div class="space-y-5">
