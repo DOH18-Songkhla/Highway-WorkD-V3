@@ -671,19 +671,13 @@ ${photosHTML}
                     
                     <!-- 💡 ปุ่มจัดการ (แยกกล่องออกมาต่างหาก จัดให้อยู่ขวาสุด) -->
                     <div class="mt-8 pt-5 border-t border-gray-200 flex justify-end gap-3">
-                        <button onclick="exportProjectImage('
-${p.id}
-')" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                        <button onclick="exportProjectImage('${p.id}')" class="bg-green-500 hover:bg-green-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
                             📸 ออกรายงาน
                         </button>
-                        <button onclick="document.getElementById('viewModal').classList.add('hidden'); editProject('
-${p.id}
-');" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                        <button onclick="document.getElementById('viewModal').classList.add('hidden'); editProject('${p.id}');" class="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
                             ✏️ แก้ไขข้อมูล
                         </button>
-                        <button onclick="deleteProject('
-${p.id}', '${p.project_name}
-')" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
+                        <button onclick="deleteProject('${p.id}', '${p.project_name}')" class="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-2">
                             🗑️ ลบโครงการ
                         </button>
                     </div>
