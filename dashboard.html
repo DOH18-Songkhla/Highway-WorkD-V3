@@ -369,7 +369,17 @@
                         expiredBadge = `<div class="absolute -top-3 -left-3 bg-red-600 text-white text-[10px] font-bold px-2 py-1 rounded-md shadow-md z-10 animate-bounce">⚠️ สิ้นสุดสัญญา</div>`;
                     }
                 }
-
+                
+                // 💡 [จุดที่ต้องเพิ่มใหม่] Badge แหล่งเงิน (สร., งบจังหวัด) สไตล์ตรายาง
+                let fundingBadge = '';
+                if (project.funding_source && project.funding_source.trim() !== '') {
+                    fundingBadge = `
+                        <div class="absolute bottom-16 right-5 bg-white border-2 border-red-500 text-blue-800 font-bold px-3 py-1 rounded-full shadow-sm text-sm z-10 transform -rotate-12 opacity-90 group-hover:scale-110 group-hover:opacity-100 transition-all duration-300">
+                            ${project.funding_source}
+                        </div>
+                    `;
+                }
+                
                 gridHTML += `
                     <div onclick="viewProject('${project.id}')" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-400 transition-all duration-300 p-5 flex flex-col justify-between relative group cursor-pointer transform hover:-translate-y-1">
                         ${redDotBadge}
