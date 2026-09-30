@@ -369,38 +369,51 @@
                     }
                 }
                 
-                // 💡 [ปรับปรุงใหม่] ตรายางแหล่งเงิน (ทรงแคปซูล รองรับข้อความยาว)
+                // 💡 [ปรับปรุง] ขยับตรายางขึ้นนิดนึง (bottom-20) ให้พ้นระยะหลอดก้าวหน้า
                 let fundingBadge = '';
                 if (project.funding_source && String(project.funding_source).trim() !== '') {
                     const fundText = String(project.funding_source).trim();
                     fundingBadge = `
-                        <div class="absolute bottom-16 right-4 bg-white border-[2px] border-red-500 rounded-full px-3 py-1 flex items-center justify-center shadow-md z-10 transform -rotate-12 group-hover:scale-110 transition-all duration-300 max-w-[120px]">
+                        <div class="absolute bottom-20 right-4 bg-white border-[2px] border-red-500 rounded-full px-3 py-1 flex items-center justify-center shadow-md z-10 transform -rotate-12 group-hover:scale-110 transition-all duration-300 max-w-[120px]">
                             <span class="text-blue-800 font-extrabold text-xs text-center truncate w-full" title="${fundText}">
                                 ${fundText}
                             </span>
                         </div>
                     `;
                 }
-                
+
                 gridHTML += `
-                    <div onclick="viewProject('${project.id}')" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-400 transition-all duration-300 p-5 flex flex-col justify-between relative group cursor-pointer transform hover:-translate-y-1">
+                    <div onclick="viewProject('${project.id}')" class="bg-white rounded-xl border border-gray-200 shadow-sm hover:shadow-lg hover:border-blue-400 transition-all duration-300 p-5 flex flex-col relative group cursor-pointer transform hover:-translate-y-1 h-full">
                         ${redDotBadge}
-                        ${expiredBadge} <!-- 💡 ป้ายเตือนหมดสัญญา -->
-                        ${fundingBadge} <!-- 💡 ตรายางแหล่งเงิน (สร., สผ., งบจังหวัด ฯลฯ) -->
+                        ${expiredBadge} 
+                        ${fundingBadge} 
                         
-                        <div class="relative z-0">
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">สัญญา: ${project.contract_number || '-'}</span>
-                                <span class="px-2 py-0.5 rounded text-[11px] font-bold border ${statusColor}">
-                                    ${project.status || 'ไม่มีข้อมูล'}
-                                </span>
+                        <!-- 💡 ค่ายกล Flex-Col ยืดให้เต็มความสูงการ์ด -->
+                        <div class="relative z-0 flex flex-col h-full w-full">
+                            
+                            <!-- 💡 ส่วนเนื้อหาด้านบน (ยืดพื้นที่ว่างเพื่อดัน Progress Bar ลง) -->
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-start mb-2">
+                                    <span class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">สัญญา: ${project.contract_number || '-'}</span>
+                                    <span class="px-2 py-0.5 rounded text-[11px] font-bold border ${statusColor}">
+                                        ${project.status || 'ไม่มีข้อมูล'}
+                                    </span>
+                                </div>
+                                
+                                <!-- 💡 ล็อกความสูงขั้นต่ำ (min-h-[44px]) เผื่อชื่อสั้น 1 บรรทัด -->
+                                <h3 class="text-base font-bold text-gray-800 leading-snug mb-2 line-clamp-2 pr-20 min-h-[44px]" title="${project.project_name || '-'}">
+                                    ${project.project_name || '-'}
+                                </h3>
+                                
+                                <p class="text-xs text-gray-500 mb-1 flex items-center gap-1">👷 <span class="truncate pr-20">${project.contractor || '-'}</span></p>
+                                <p class="text-xs text-gray-500 mb-2 flex items-center gap-1">📍 <span class="truncate pr-20">${project.route_number || '-'}</span></p>
                             </div>
-                            <h3 class="text-base font-bold text-gray-800 leading-snug mb-2 line-clamp-2 pr-20" title="${project.project_name || '-'}">
-                                ${project.project_name || '-'}
-                            </h3>
-                            <p class="text-xs text-gray-500 mb-1 flex items-center gap-1">👷 <span class="truncate pr-20">${project.contractor || '-'}</span></p>
-                            <p class="text-xs text-gray-500 mb-3 flex items-center gap-1">📍 <span class="truncate pr-20">${project.route_number || '-'}</span></p>
-                            ${progressBarHTML}
+                            
+                            <!-- 💡 ดัน Progress Bar ลงไปติดก้นการ์ดเสมอด้วย mt-auto -->
+                            <div class="mt-auto">
+                                ${progressBarHTML}
+                            </div>
+                            
                         </div>
                     </div>
                 `;
