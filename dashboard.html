@@ -28,14 +28,15 @@
     <!-- พื้นที่แสดงเนื้อหาหลัก -->
     <div class="container mx-auto p-6 mt-4">
         <div class="bg-white rounded-lg shadow-md p-6">
-            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-                <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
-                <!-- แทรกค่ายกลปุ่มกรองสถานะเข้าไปตรงกลาง -->
-                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
-                <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
+            
+            <!-- 💡 [ยาถอนพิษ] จัดระเบียบ Flexbox ใหม่ แบ่ง 3 โซน (ซ้าย-กลาง-ขวา) ไม่ซ้อนกัน -->
+            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 gap-4">
                 
-                <!-- 💡 [เพิ่มใหม่] ค่ายกลปุ่มศักดิ์สิทธิ์ (กรองสถานะ) อยู่ตรงกลาง -->
-                <div class="flex flex-wrap gap-2" id="statusTabsContainer">
+                <!-- โซนซ้าย: หัวข้อ -->
+                <h2 class="text-2xl font-bold text-gray-800 whitespace-nowrap">ระบบรายงานความก้าวหน้าโครงการ</h2>
+                
+                <!-- โซนกลาง: ค่ายกลปุ่มศักดิ์สิทธิ์ (กรองสถานะ) -->
+                <div class="flex flex-wrap justify-center gap-2" id="statusTabsContainer">
                     <button onclick="filterByStatus('ทั้งหมด')" id="btnStatusAll" class="px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border bg-blue-600 text-white border-blue-600">
                         ทั้งหมด
                     </button>
@@ -47,25 +48,20 @@
                     </button>
                 </div>
 
+                <!-- โซนขวา: กลุ่มปุ่มจัดการ (นำเข้า/ส่งออก/เพิ่มโครงการ) -->
                 <div class="flex flex-wrap items-center gap-2">
-                    <!-- ปุ่ม นำเข้า ส่งออก เพิ่มโครงการ... (ของเดิมอยู่ตรงนี้) -->
-                <div class="flex flex-wrap items-center gap-2">
-                    <!-- ปุ่ม นำเข้า JSON (ซ่อน input file ไว้ แล้วใช้ปุ่มกดเรียก) -->
                     <input type="file" id="importJsonFile" accept=".json" class="hidden">
                     <button id="importJsonBtn" onclick="document.getElementById('importJsonFile').click()" class="bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-1 text-sm hidden">
                         📥 นำเข้า JSON
                     </button>
-
-                    <!-- ปุ่ม ส่งออก JSON -->
                     <button id="exportJsonBtn" onclick="exportToJson()" class="bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-1 text-sm hidden">
                         📤 ส่งออก JSON
                     </button>
-
-                    <!-- ปุ่ม เพิ่มโครงการใหม่ (ปุ่มหลัก) -->
                     <button id="addProjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-1 text-sm hidden">
                         <span class="text-lg leading-none">+</span> เพิ่มโครงการใหม่
                     </button>
                 </div>
+                
             </div>
 
             <!-- 📌 พื้นที่สำหรับ แท็บปีงบประมาณ พ.ศ. -->
