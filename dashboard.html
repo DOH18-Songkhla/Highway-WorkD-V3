@@ -30,7 +30,25 @@
         <div class="bg-white rounded-lg shadow-md p-6">
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
                 <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
+                <!-- แทรกค่ายกลปุ่มกรองสถานะเข้าไปตรงกลาง -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 gap-4">
+                <h2 class="text-2xl font-bold text-gray-800">ระบบรายงานความก้าวหน้าโครงการ</h2>
                 
+                <!-- 💡 [เพิ่มใหม่] ค่ายกลปุ่มศักดิ์สิทธิ์ (กรองสถานะ) อยู่ตรงกลาง -->
+                <div class="flex flex-wrap gap-2" id="statusTabsContainer">
+                    <button onclick="filterByStatus('ทั้งหมด')" id="btnStatusAll" class="px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border bg-blue-600 text-white border-blue-600">
+                        ทั้งหมด
+                    </button>
+                    <button onclick="filterByStatus('ระหว่างก่อสร้าง')" id="btnStatusProgress" class="px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-yellow-50">
+                        🚧 ระหว่างก่อสร้าง
+                    </button>
+                    <button onclick="filterByStatus('แล้วเสร็จ')" id="btnStatusDone" class="px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-green-50">
+                        ✅ แล้วเสร็จ
+                    </button>
+                </div>
+
+                <div class="flex flex-wrap items-center gap-2">
+                    <!-- ปุ่ม นำเข้า ส่งออก เพิ่มโครงการ... (ของเดิมอยู่ตรงนี้) -->
                 <div class="flex flex-wrap items-center gap-2">
                     <!-- ปุ่ม นำเข้า JSON (ซ่อน input file ไว้ แล้วใช้ปุ่มกดเรียก) -->
                     <input type="file" id="importJsonFile" accept=".json" class="hidden">
@@ -231,6 +249,7 @@
         let currentExistingPhotos = {}; 
         let allProjectsData = [];
         let currentYearTab = 'ทั้งหมด';
+        let currentStatusTab = 'ทั้งหมด'; // 💡 เพิ่มตัวแปรเก็บค่าสถานะปัจจุบัน
 
         // 1. ตรวจสอบสิทธิ์ผู้ใช้งาน
         async function checkSession() {
@@ -303,6 +322,17 @@
             renderYearTabs(); 
             renderTable(); 
         }
+        // 💡 [เพิ่มใหม่] ฟังก์ชันเปลี่ยนสีปุ่มและกรองสถานะ
+        function filterByStatus(status) {
+            currentStatusTab = status;
+            
+            // อัปเดตสีปุ่มให้รู้ว่ากดตัวไหนอยู่
+            document.getElementById('btnStatusAll').className = `px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border ${status === 'ทั้งหมด' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-blue-50'}`;
+            document.getElementById('btnStatusProgress').className = `px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border ${status === 'ระหว่างก่อสร้าง' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-gray-600 hover:bg-yellow-50'}`;
+            document.getElementById('btnStatusDone').className = `px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border ${status === 'แล้วเสร็จ' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-600 hover:bg-green-50'}`;
+            
+            renderTable(); // สั่งให้วาดตารางใหม่
+        }
         // 4. วาดตารางแบบ Grid
         function renderTable() {
             const container = document.getElementById('projectContainer');
@@ -313,6 +343,11 @@
             // กรองตามปีงบประมาณ
             if (currentYearTab !== 'ทั้งหมด') {
                 displayProjects = displayProjects.filter(p => p.fiscal_year === currentYearTab);
+            }
+
+            // 💡 [เพิ่มใหม่] กรองตามสถานะ
+            if (currentStatusTab !== 'ทั้งหมด') {
+                displayProjects = displayProjects.filter(p => p.status === currentStatusTab);
             }
 
             // 📌 [เพิ่มใหม่] จัดเรียงเลขที่สัญญาแบบ Natural Sort (9 แล้วไป 10)
