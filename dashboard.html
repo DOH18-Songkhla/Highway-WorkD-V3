@@ -29,24 +29,48 @@
     <div class="container mx-auto p-6 mt-4">
         <div class="bg-white rounded-lg shadow-md p-6">
             
-            <!-- 💡 [ยาถอนพิษ] จัดระเบียบ Flexbox ใหม่ แบ่ง 3 โซน (ซ้าย-กลาง-ขวา) ไม่ซ้อนกัน -->
-            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-center mb-4 gap-4">
-                
-                <!-- โซนซ้าย: หัวข้อ -->
+            <!-- หัวข้อ และ ปุ่มจัดการ (โซนบน) -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <h2 class="text-2xl font-bold text-gray-800 whitespace-nowrap">ระบบรายงานความก้าวหน้าโครงการ</h2>
                 
-                <!-- โซนกลาง: ค่ายกลปุ่มศักดิ์สิทธิ์ (กรองสถานะ) -->
-                <div class="flex flex-wrap justify-center gap-2" id="statusTabsContainer">
-                    <button onclick="filterByStatus('ทั้งหมด')" id="btnStatusAll" class="px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border bg-blue-600 text-white border-blue-600">
-                        ทั้งหมด
+                <!-- กลุ่มปุ่มจัดการ (นำเข้า/ส่งออก/เพิ่มโครงการ) อยู่ขวาบนเหมือนเดิม -->
+                <div class="flex flex-wrap items-center gap-2">
+                    <input type="file" id="importJsonFile" accept=".json" class="hidden">
+                    <button id="importJsonBtn" onclick="document.getElementById('importJsonFile').click()" class="bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-1 text-sm hidden">
+                        📥 นำเข้า JSON
                     </button>
-                    <button onclick="filterByStatus('ระหว่างก่อสร้าง')" id="btnStatusProgress" class="px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-yellow-50">
+                    <button id="exportJsonBtn" onclick="exportToJson()" class="bg-white border-2 border-gray-300 text-gray-700 hover:bg-gray-50 px-3 py-2 rounded-lg font-bold shadow-sm transition flex items-center gap-1 text-sm hidden">
+                        📤 ส่งออก JSON
+                    </button>
+                    <button id="addProjectBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-bold shadow-md transition flex items-center gap-1 text-sm hidden">
+                        <span class="text-lg leading-none">+</span> เพิ่มโครงการใหม่
+                    </button>
+                </div>
+            </div>
+
+            <!-- 💡 [จัดเรียงใหม่] แถบตัวกรองทั้งหมด (ปี พ.ศ. + สถานะ) ให้อยู่บรรทัดเดียวกัน -->
+            <div class="flex flex-wrap items-center gap-3 mb-6 bg-gray-50 p-2 rounded-xl border border-gray-200">
+                
+                <!-- 📌 1. แท็บปีงบประมาณ พ.ศ. -->
+                <div id="yearTabsContainer" class="flex gap-2 overflow-x-auto scrollbar-hide"></div>
+
+                <!-- 💡 เส้นแบ่งขีดๆ (Divider) -->
+                <div class="hidden md:block w-px h-6 bg-gray-300 mx-1"></div>
+
+                <!-- 📌 2. แท็บสถานะ (ต่อท้าย) -->
+                <div class="flex flex-wrap gap-2" id="statusTabsContainer">
+                    <button onclick="filterByStatus('ทั้งหมด')" id="btnStatusAll" class="px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border bg-blue-600 text-white border-blue-600">
+                        ทุกสถานะ
+                    </button>
+                    <button onclick="filterByStatus('ระหว่างก่อสร้าง')" id="btnStatusProgress" class="px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-yellow-50">
                         🚧 ระหว่างก่อสร้าง
                     </button>
-                    <button onclick="filterByStatus('แล้วเสร็จ')" id="btnStatusDone" class="px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-green-50">
+                    <button onclick="filterByStatus('แล้วเสร็จ')" id="btnStatusDone" class="px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-green-50">
                         ✅ แล้วเสร็จ
                     </button>
                 </div>
+
+            </div>
 
                 <!-- โซนขวา: กลุ่มปุ่มจัดการ (นำเข้า/ส่งออก/เพิ่มโครงการ) -->
                 <div class="flex flex-wrap items-center gap-2">
@@ -322,10 +346,10 @@
         function filterByStatus(status) {
             currentStatusTab = status;
             
-            // อัปเดตสีปุ่มให้รู้ว่ากดตัวไหนอยู่
-            document.getElementById('btnStatusAll').className = `px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border ${status === 'ทั้งหมด' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-blue-50'}`;
-            document.getElementById('btnStatusProgress').className = `px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border ${status === 'ระหว่างก่อสร้าง' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-gray-600 hover:bg-yellow-50'}`;
-            document.getElementById('btnStatusDone').className = `px-4 py-2 rounded-lg text-sm font-bold shadow-sm transition border ${status === 'แล้วเสร็จ' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-600 hover:bg-green-50'}`;
+            // 💡 อัปเดตคลาสเป็น rounded-full px-5 py-1.5 ให้เข้าชุดกับปุ่มปี พ.ศ.
+            document.getElementById('btnStatusAll').className = `px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border ${status === 'ทั้งหมด' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-blue-50'}`;
+            document.getElementById('btnStatusProgress').className = `px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border ${status === 'ระหว่างก่อสร้าง' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-gray-600 hover:bg-yellow-50'}`;
+            document.getElementById('btnStatusDone').className = `px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border ${status === 'แล้วเสร็จ' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-600 hover:bg-green-50'}`;
             
             renderTable(); // สั่งให้วาดตารางใหม่
         }
