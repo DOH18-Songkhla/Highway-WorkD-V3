@@ -57,17 +57,18 @@
                 <!-- 💡 เส้นแบ่งขีดๆ (Divider) -->
                 <div class="hidden md:block w-px h-6 bg-gray-300 mx-1"></div>
 
-                <!-- 📌 2. แท็บสถานะ (ต่อท้าย) -->
-                <div class="flex flex-wrap gap-2" id="statusTabsContainer">
-                    <button onclick="filterByStatus('ทั้งหมด')" id="btnStatusAll" class="px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border bg-blue-600 text-white border-blue-600">
-                        ทุกสถานะ
-                    </button>
-                    <button onclick="filterByStatus('ระหว่างก่อสร้าง')" id="btnStatusProgress" class="px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-yellow-50">
-                        🚧 ระหว่างก่อสร้าง
-                    </button>
-                    <button onclick="filterByStatus('แล้วเสร็จ')" id="btnStatusDone" class="px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border bg-white text-gray-600 hover:bg-green-50">
-                        ✅ แล้วเสร็จ
-                    </button>
+                <!-- 📌 2. ดรอปดาวน์เลือกสถานะ (ต่อท้าย) -->
+                <div class="flex items-center">
+                    <select id="statusFilter" onchange="filterByStatus(this.value)" class="px-4 py-1.5 rounded-full text-sm font-bold text-gray-700 bg-white border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none hover:bg-gray-50 transition">
+                        <option value="ทั้งหมด">🌍 ทุกสถานะ</option>
+                        <option value="รอดำเนินการ">📌 รอดำเนินการ</option>
+                        <option value="ระหว่างก่อสร้าง">🚧 ระหว่างก่อสร้าง</option>
+                        <option value="รอส่งมอบงาน">📦 รอส่งมอบงาน</option>
+                        <option value="รอเบิกจ่าย">💰 รอเบิกจ่าย</option>
+                        <option value="ล่าช้ากว่าแผน">⚠️️ ล่าช้ากว่าแผน</option>
+                        <option value="แล้วเสร็จ">✅ แล้วเสร็จ</option>
+                        <option value="บอกเลิกสัญญา">⛔ บอกเลิกสัญญา</option>
+                    </select>
                 </div>
 
             </div>
@@ -342,16 +343,10 @@
             renderYearTabs(); 
             renderTable(); 
         }
-        // 💡 [เพิ่มใหม่] ฟังก์ชันเปลี่ยนสีปุ่มและกรองสถานะ
+        // 💡 [เพิ่มใหม่] ฟังก์ชันรับค่าจากดรอปดาวน์และกรองสถานะ
         function filterByStatus(status) {
             currentStatusTab = status;
-            
-            // 💡 อัปเดตคลาสเป็น rounded-full px-5 py-1.5 ให้เข้าชุดกับปุ่มปี พ.ศ.
-            document.getElementById('btnStatusAll').className = `px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border ${status === 'ทั้งหมด' ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-600 hover:bg-blue-50'}`;
-            document.getElementById('btnStatusProgress').className = `px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border ${status === 'ระหว่างก่อสร้าง' ? 'bg-yellow-500 text-white border-yellow-500' : 'bg-white text-gray-600 hover:bg-yellow-50'}`;
-            document.getElementById('btnStatusDone').className = `px-5 py-1.5 rounded-full text-sm font-bold shadow-sm transition border ${status === 'แล้วเสร็จ' ? 'bg-green-500 text-white border-green-500' : 'bg-white text-gray-600 hover:bg-green-50'}`;
-            
-            renderTable(); // สั่งให้วาดตารางใหม่
+            renderTable(); // สั่งให้วาดตารางใหม่ตามสถานะที่เลือก
         }
         // 4. วาดตารางแบบ Grid
         function renderTable() {
