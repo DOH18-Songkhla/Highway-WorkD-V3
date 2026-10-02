@@ -51,26 +51,45 @@
             <!-- 💡 [จัดเรียงใหม่] แถบตัวกรองทั้งหมด (ปี พ.ศ. + สถานะ) ให้อยู่บรรทัดเดียวกัน -->
             <div class="flex flex-wrap items-center gap-3 mb-6 bg-gray-50 p-2 rounded-xl border border-gray-200">
                 
-                <!-- 📌 1. แท็บปีงบประมาณ พ.ศ. -->
-                <div id="yearTabsContainer" class="flex gap-2 overflow-x-auto scrollbar-hide"></div>
+                <!-- 📌 1. แท็บปีงบประมาณ พ.ศ. (คงไว้ด้านบนให้กดง่ายๆ) -->
+            <div id="yearTabsContainer" class="flex gap-2 mb-3 overflow-x-auto pb-2 scrollbar-hide"></div>
 
-                <!-- 💡 เส้นแบ่งขีดๆ (Divider) -->
-                <div class="hidden md:block w-px h-6 bg-gray-300 mx-1"></div>
+            <!-- 📌 2. Toolbar อเนกประสงค์ (ค้นหา | สถานะ | เรียงลำดับ) สร้างด้วย Tailwind ล้วน -->
+            <div class="flex flex-col md:flex-row items-center gap-3 mb-6 bg-white border border-gray-200 rounded-xl p-3 shadow-sm">
+                
+                <!-- 🔍 ช่องค้นหา (flex-grow ช่วยให้ยืดเต็มพื้นที่ที่เหลือ) -->
+                <div class="relative flex-grow w-full md:w-auto">
+                    <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-gray-400">
+                        🔍
+                    </span>
+                    <input type="text" id="searchInput" oninput="renderTable()" placeholder="ค้นหาชื่อโครงการ ผู้รับเหมา แหล่งงบประมาณ..." class="w-full pl-10 pr-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white transition-colors">
+                </div>
 
-                <!-- 📌 2. ดรอปดาวน์เลือกสถานะ (ต่อท้าย) -->
-                <div class="flex items-center">
-                    <select id="statusFilter" onchange="filterByStatus(this.value)" class="px-4 py-1.5 rounded-full text-sm font-bold text-gray-700 bg-white border border-gray-300 shadow-sm focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer appearance-none hover:bg-gray-50 transition">
+                <!-- 📂 ดรอปดาวน์สถานะ -->
+                <div class="w-full md:w-auto">
+                    <select id="statusFilter" onchange="filterByStatus(this.value)" class="w-full md:w-auto px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white cursor-pointer transition-colors">
                         <option value="ทั้งหมด">🌍 ทุกสถานะ</option>
                         <option value="รอดำเนินการ">📌 รอดำเนินการ</option>
                         <option value="ระหว่างก่อสร้าง">🚧 ระหว่างก่อสร้าง</option>
                         <option value="รอส่งมอบงาน">📦 รอส่งมอบงาน</option>
                         <option value="รอเบิกจ่าย">💰 รอเบิกจ่าย</option>
-                        <option value="ล่าช้ากว่าแผน">⚠️️ ล่าช้ากว่าแผน</option>
+                        <option value="ล่าช้ากว่าแผน">⚠ ล่าช้ากว่าแผน</option>
                         <option value="แล้วเสร็จ">✅ แล้วเสร็จ</option>
                         <option value="บอกเลิกสัญญา">⛔ บอกเลิกสัญญา</option>
                     </select>
                 </div>
 
+                <!-- 📊 ดรอปดาวน์เรียงลำดับ (ตามเรฟเฟอเรนซ์) -->
+                <div class="w-full md:w-auto">
+                    <select id="sortFilter" onchange="renderTable()" class="w-full md:w-auto px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm font-medium text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white cursor-pointer transition-colors">
+                        <option value="contract_asc">เรียง: เลขสัญญา (น้อย-มาก)</option>
+                        <option value="contract_desc">เรียง: เลขสัญญา (มาก-น้อย)</option>
+                        <option value="progress_desc">เรียง: ความคืบหน้า (มาก-น้อย)</option>
+                        <option value="progress_asc">เรียง: ความคืบหน้า (น้อย-มาก)</option>
+                        <option value="budget_desc">เรียง: งบประมาณ (สูงสุด)</option>
+                    </select>
+                </div>
+                
             </div>
 
                 <!-- โซนขวา: กลุ่มปุ่มจัดการ (นำเข้า/ส่งออก/เพิ่มโครงการ) -->
@@ -348,36 +367,63 @@
             currentStatusTab = status;
             renderTable(); // สั่งให้วาดตารางใหม่ตามสถานะที่เลือก
         }
-        // 4. วาดตารางแบบ Grid
+        // 4. วาดตารางแบบ Grid และจัดการฟิลเตอร์ (ปี, สถานะ, ค้นหา, เรียงลำดับ)
         function renderTable() {
             const container = document.getElementById('projectContainer');
             container.className = 'p-2 text-center text-gray-500 rounded'; 
             
-            let displayProjects = allProjectsData;
+            // ก๊อปปี้ข้อมูลต้นฉบับมาจัดการ เพื่อไม่ให้กระทบข้อมูลจริง
+            let displayProjects = [...allProjectsData];
 
-            // กรองตามปีงบประมาณ
+            // 🎯 1. กรองตามปีงบประมาณ
             if (currentYearTab !== 'ทั้งหมด') {
                 displayProjects = displayProjects.filter(p => p.fiscal_year === currentYearTab);
             }
 
-            // 💡 [เพิ่มใหม่] กรองตามสถานะ
+            // 🎯 2. กรองตามสถานะ
             if (currentStatusTab !== 'ทั้งหมด') {
                 displayProjects = displayProjects.filter(p => p.status === currentStatusTab);
             }
 
-            // 📌 [เพิ่มใหม่] จัดเรียงเลขที่สัญญาแบบ Natural Sort (9 แล้วไป 10)
+            // 🎯 3. กรองตามคำค้นหา (Search)
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                const searchTerm = searchInput.value.toLowerCase().trim();
+                if (searchTerm !== '') {
+                    displayProjects = displayProjects.filter(p => {
+                        // ค้นหาจาก ชื่อโครงการ, ผู้รับเหมา, แหล่งทุน, เลขสัญญา, รหัสสายทาง
+                        const textToSearch = [p.project_name, p.contractor, p.funding_source, p.contract_number, p.route_number].join(' ').toLowerCase();
+                        return textToSearch.includes(searchTerm);
+                    });
+                }
+            }
+
+            // 🎯 4. เรียงลำดับ (Sort)
+            const sortFilter = document.getElementById('sortFilter');
+            const sortVal = sortFilter ? sortFilter.value : 'contract_asc';
+            
             displayProjects.sort((a, b) => {
-                const contractA = a.contract_number || '';
-                const contractB = b.contract_number || '';
-                // ใช้ localeCompare (numeric: true) เพื่อให้มันฉลาดพอที่จะรู้ว่า 10 มากกว่า 9
-                return contractA.localeCompare(contractB, 'th', { numeric: true, sensitivity: 'base' });
+                if (sortVal === 'contract_asc') {
+                    const cA = a.contract_number || ''; const cB = b.contract_number || '';
+                    return cA.localeCompare(cB, 'th', { numeric: true, sensitivity: 'base' });
+                }
+                if (sortVal === 'contract_desc') {
+                    const cA = a.contract_number || ''; const cB = b.contract_number || '';
+                    return cB.localeCompare(cA, 'th', { numeric: true, sensitivity: 'base' });
+                }
+                if (sortVal === 'progress_desc') return (b.progress_percent || 0) - (a.progress_percent || 0);
+                if (sortVal === 'progress_asc') return (a.progress_percent || 0) - (b.progress_percent || 0);
+                if (sortVal === 'budget_desc') return (b.total_budget || 0) - (a.total_budget || 0);
+                return 0;
             });
 
+            // เช็คว่ามีข้อมูลแสดงผลไหม
             if (displayProjects.length === 0) {
-                container.innerHTML = `<p class="text-gray-500 py-8">ไม่มีข้อมูลโครงการในปีงบประมาณ ${currentYearTab !== 'ทั้งหมด' ? currentYearTab : ''}</p>`;
+                container.innerHTML = `<p class="text-gray-500 py-8">ไม่มีข้อมูลโครงการที่ตรงกับเงื่อนไขการค้นหา</p>`;
                 return;
             }
 
+            // วาดการ์ด (ใช้โค้ดเดิมเป๊ะ)
             let gridHTML = `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 text-left">`;
 
             displayProjects.forEach(project => {
